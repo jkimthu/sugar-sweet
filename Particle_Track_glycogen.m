@@ -1,4 +1,4 @@
-function ParticleOut=ParticleTrack_glycogen(particles, trackmode, Rmax, matchmethod)
+function ParticleOut=Particle_Track_glycogen(particles, trackmode, Rmax, matchmethod)
 
 PlotFlag=0;
 % Jeffrey Guasto
@@ -176,5 +176,5 @@ end % ii
     disp(['  Elapsed Time: ', num2str(mytime), ' seconds'])
     disp('  ')
   
-    ParticleOut=cellfun(@(A) struct('X',A(:,1),'Y',A(:,2),'Area',A(:,3),'MajAx',A(:,4),'MinAx',A(:,5),'YFP',A(:,6),'CFP',A(:,7),'Frame',A(:,8),'Ecc',A(:,9),'Angle',A(:,10),ParticleTracks); 
+    ParticleOut=cellfun(@(A) struct('X',A(:,1),'Y',A(:,2),'Area',A(:,3),'MajAx',A(:,4),'MinAx',A(:,5),'YFP',A(:,6),'CFP',A(:,7),'Frame',A(:,8),'Ecc',A(:,9),'Angle',A(:,10)),ParticleTracks); 
 end

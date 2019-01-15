@@ -14,8 +14,8 @@
 
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
-% last update: Jen, 2018 November 25
-% commit: 30 sec pulse experiment, 2018-11-23, first look
+% last update: Jen, 2019 January 15
+% commit: add eccentricity and orientation to 2018-11-23 analysis
 
 
 % ok let's go!
@@ -68,8 +68,8 @@ num_tpt = 241; % total num of timepoints in analysis
 
 %% ONE. TEST ANALYSIS
 %  visualize image analysis parameters on single image
-xy = 1;
-tpt = 1;
+xy = 16;
+tpt = 50;
 
 % initialize xy name
 if xy < 10
@@ -134,7 +134,7 @@ cc = bwconncomp(bw_final);
 
 
 % gather properties for each identified particle
-stats = regionprops(cc,'Area','Centroid','MajorAxisLength','MinorAxisLength');
+stats = regionprops(cc,'Area','Centroid','MajorAxisLength','MinorAxisLength','Eccentricity','Orientation');
 
 
 % visualize distribution of cell areas
@@ -254,6 +254,14 @@ clear isYFP isCFP
 % frame
 p_unit.Frame = tpt;
 
+
+% eccentricity and angle
+ecc = extractfield(stats,'Eccentricity')';
+angle = extractfield(stats,'Orientation')';
+p_unit.Ecc = ecc;
+p_unit.Angle = angle;
+
+
 p_clone(tpt) = p_unit;
 
 %% TWO. FULL ANALYSIS
@@ -267,7 +275,7 @@ for xy = 1:xy_final
     elseif xy < 100
         xyName = strcat('xy',num2str(xy));
     end
-    
+    disp( strcat('Analyzing xy(',num2str(xy),') of (',num2str(xy_final),')') )
     
     for tpt = 1:num_tpt % num tpts
         
@@ -327,8 +335,8 @@ for xy = 1:xy_final
         
         
         % gather properties for each identified particle
-        stats = regionprops(cc,'Area','Centroid','MajorAxisLength','MinorAxisLength');
-        
+       stats = regionprops(cc,'Area','Centroid','MajorAxisLength','MinorAxisLength','Eccentricity','Orientation');
+
         
         % visualize distribution of cell areas
         %area = extractfield(stats,'Area')';
@@ -445,8 +453,17 @@ for xy = 1:xy_final
         p_unit.cfp = isCFP;
         clear isYFP isCFP
         
+        
         % frame
         p_unit.Frame = tpt;
+        
+        
+        % eccentricity and angle
+        ecc = extractfield(stats,'Eccentricity')';
+        angle = extractfield(stats,'Orientation')';
+        p_unit.Ecc = ecc;
+        p_unit.Angle = angle;
+        
         
         p_clone(tpt) = p_unit;
 
