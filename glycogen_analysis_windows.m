@@ -15,7 +15,7 @@
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
 % last update: Jen, 2018 November 25
-% commit: 30 sec pulse experiment, 2018-11-23
+% commit: 30 sec pulse experiment, 2018-11-23, first look
 
 
 % ok let's go!
