@@ -5,8 +5,8 @@ PlotFlag=0;
 % 8/5/2011
 % MIT
 
-% last edit: Jen Nguyen 2018 Oct 10
-% commit: edits fields, removing the unused and adding fluorescent label data for glycogen analysis
+% last edit: Jen Nguyen 2019 Jan 15
+% commit: adds eccentricity and angle glycogen analysis
 
 
 % "trackmode" = use nearest neighbors or predictive methods ['position', 'velocity', or 'acceleration']
@@ -43,7 +43,7 @@ for n = 1:N_frames
     
     % original from Jeff and Vicente
     %particleMat=[particles(n).X,particles(n).Y,particles(n).A,particles(n).MaxInt,ones(size(particles(n).X))*particles(n).Frame,particles(n).Ecc,particles(n).MajAx,particles(n).MinAx,particles(n).Ang];
-    particleMat=[particles(n).X,particles(n).Y,particles(n).A,particles(n).MajAx,particles(n).MinAx,particles(n).yfp,particles(n).cfp,ones(size(particles(n).X)).*particles(n).Frame];
+    particleMat=[particles(n).X,particles(n).Y,particles(n).A,particles(n).MajAx,particles(n).MinAx,particles(n).yfp,particles(n).cfp,ones(size(particles(n).X)).*particles(n).Frame,particles(n).Ecc,particles(n).Angle];
     % 1 = X
     % 2 = Y
     % 3 = Area
@@ -52,6 +52,8 @@ for n = 1:N_frames
     % 6 = YFP
     % 7 = CFP
     % 8 = Frame
+    % 9 = Eccentricity
+    % 10 = Angle
     
     if n == 1; 
         ParticleTracks([1:N_now]) = num2cell(particleMat,2);    
@@ -174,5 +176,5 @@ end % ii
     disp(['  Elapsed Time: ', num2str(mytime), ' seconds'])
     disp('  ')
   
-    ParticleOut=cellfun(@(A) struct('X',A(:,1),'Y',A(:,2),'Area',A(:,3),'MajAx',A(:,4),'MinAx',A(:,5),'YFP',A(:,6),'CFP',A(:,7),'Frame',A(:,8)),ParticleTracks); 
+    ParticleOut=cellfun(@(A) struct('X',A(:,1),'Y',A(:,2),'Area',A(:,3),'MajAx',A(:,4),'MinAx',A(:,5),'YFP',A(:,6),'CFP',A(:,7),'Frame',A(:,8),'Ecc',A(:,9),'Angle',A(:,10),ParticleTracks); 
 end
