@@ -6,9 +6,9 @@
 
 % adapted from original buildDM, but streamlined for glycogen proejct analysis
 
-% last updated: jen, 2019 January 15
+% last updated: jen, 2019 January 16
 
-% commit: streamline original for glycogen analysis
+% commit: minor edits for comment clarity
 
 
 function [dm] = buildDM_glycogen(D5,xy_start,xy_end)
@@ -18,22 +18,20 @@ tn_counter = 0;
 dropThreshold = -0.75; % consider greater negatives a division event
 
 
-Time = [];              % 2. Time
-lengthVals = [];        % 3. lengthVals
-isDrop = [];            % 4. isDrop
-curveFinder = [];       % 5. curveFinder
-widthVals = [];         % 6. widthVals
-vaVals = [];            % 7. vaVals
-surfaceArea = [];       % 8. surfaceArea
-x_pos = [];             % 9. x coordinate of centroid
-y_pos = [];             % 10. y coordinate of centroid
-orig_frame = [];        % 11. orig_frame
-stage_num = [];         % 12. stage_num
-eccentricity = [];      % 13. eccentricity
-angle = [];             % 14. angle of rotation of fit ellipse
-trackNum = [];          % 15. trackNum  =  total track number (vs ID which is xy based)
-CFP = [];               % 16. CFP
-YFP = [];               % 17. YFP
+Time = [];              % 1. Time
+lengthVals = [];        % 2. lengthVals
+isDrop = [];            % 3. isDrop
+widthVals = [];         % 4. widthVals
+vaVals = [];            % 5. vaVals
+surfaceArea = [];       % 6. surfaceArea
+x_pos = [];             % 7. x coordinate of centroid
+y_pos = [];             % 8. y coordinate of centroid
+orig_frame = [];        % 9. orig_frame
+eccentricity = [];      % 10. eccentricity
+angle = [];             % 11. angle of rotation of fit ellipse
+trackNum = [];          % 12. trackNum  =  total track number (vs ID which is xy based)
+CFP = [];               % 13. CFP
+YFP = [];               % 14. YFP
 
 %% loop through all xy positions and all tracks for data concatenation
 
@@ -107,7 +105,7 @@ for n = xy_start:xy_end % n = each inidividual xy position from experiment (movi
         clear eccTrack
         
         %% angle of ellipses used in particle tracking
-        angTrack = D5{n}(m).Ang;%(7:lengthCurrentTrack+6);
+        angTrack = D5{n}(m).Angle;%(7:lengthCurrentTrack+6);
         angle = [angle; angTrack];
         clear angTrack
         
@@ -128,22 +126,20 @@ end % for n
 
 
 % compile data into single matrix
-dm = [Time lengthVals isDrop curveFinder widthVals vaVals surfaceArea x_pos y_pos orig_frame stage_num eccentricity angle trackNum CFP YFP];
+dm = [Time lengthVals isDrop widthVals vaVals surfaceArea x_pos y_pos orig_frame eccentricity angle trackNum CFP YFP];
 % 1. Time
 % 2. lengthVals
 % 3. isDrop
-% 4. curveFinder
-% 5. widthVals  
-% 6. vaVals
-% 7. surfaceArea
-% 8. x_pos
-% 9. y_pos
-% 10. orig_frame
-% 11. stage_num
-% 12. eccentricity
-% 13. angle
-% 14. trackNum  =  total track number (vs ID which is xy based)
-% 15. CFP
-% 16. YFP
+% 4. widthVals  
+% 5. vaVals
+% 6. surfaceArea
+% 7. x_pos
+% 8. y_pos
+% 9. orig_frame
+% 10. eccentricity
+% 11. angle
+% 12. trackNum  =  total track number (vs ID which is xy based)
+% 13. CFP
+% 14. YFP
 
 end
