@@ -23,7 +23,8 @@
 
 
 % last edit: jen, 2019 January 16
-% commit: plots all particles found through particle tracking, D
+% commit: plots all particles found through particle tracking, D, over CFP
+%         channel
 
 
 % OK LEZ GO!
@@ -41,7 +42,7 @@ load(strcat('glycogen-',date,'-width1p4-jiggle-0p5.mat'),'D');
 
 
 % 0. initialize channel and xy movie to analyze
-channel = 'c1'; % phase (c2 = CFP; c3 = YFP)
+channel = 'c2'; %c1 = phase; c2 = CFP; c3 = YFP
 
 for xy = 16
     
@@ -65,7 +66,7 @@ for xy = 16
     
     % 3. create directory of image names in chronological order
     %imgDirectory = dir(strcat('glycogen-combo1-',date,'t*.tif'));
-    imgDirectory = dir(strcat('*',xy_nomen,'c1.tif'));
+    imgDirectory = dir(strcat('*',xy_nomen,channel,'.tif'));
     names = {imgDirectory.name};
     
     
@@ -90,7 +91,7 @@ for xy = 16
         % i. initialize current image
         cla
         I=imread(names{img});
-        filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-frame',num2str(img),'.tif');
+        filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-frame',num2str(img),'-',channel,'.tif');
         
         figure(1)
         imshow(I, 'DisplayRange',[100 150]); % 2018-11-23
