@@ -23,7 +23,7 @@
 
 
 % last edit: jen, 2019 January 16
-% commit: edited to pull target xy data from folder with tiffs of all data
+% commit: plots all particles found through particle tracking, D
 
 
 % OK LEZ GO!
