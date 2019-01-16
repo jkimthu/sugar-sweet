@@ -23,7 +23,7 @@
 
 
 % last edit: jen, 2019 January 16
-% commit: plots all particles found through particle tracking, D, over CFP
+% commit: plots all particles found through particle tracking, D, over YFP
 %         channel
 
 
@@ -42,7 +42,7 @@ load(strcat('glycogen-',date,'-width1p4-jiggle-0p5.mat'),'D');
 
 
 % 0. initialize channel and xy movie to analyze
-channel = 'c2'; %c1 = phase; c2 = CFP; c3 = YFP
+channel = 'c3'; %c1 = phase; c2 = CFP; c3 = YFP
 
 for xy = 16
     
@@ -94,7 +94,7 @@ for xy = 16
         filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-frame',num2str(img),'-',channel,'.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[100 150]); % 2018-11-23
+        imshow(I, 'DisplayRange',[100 130]); % 2018-11-23 YFP (others were [100 150])
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
