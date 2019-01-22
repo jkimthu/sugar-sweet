@@ -1,4 +1,4 @@
-% Glycogen analysis for Windows
+% Glycogen analysis _ with figures and other tests
 
 % Goal: determine growth rates of WT and glycogen breakdown mutants under a
 %       pusling MPG environment.
@@ -9,13 +9,12 @@
 %                1. particle identification, characterization and tracking
 %                2. quality control: clean dataset prior to growth rate calculations
 %                3. fun part! compute population growth rates between YFP and CFP populations
-%                4. 
-%
 
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
-% last update: Jen, 2019 January 15
-% commit: add eccentricity and orientation to 2018-11-23 analysis
+% last update: Jen, 2019 January 22
+% commit: now the less streamlined version of analysis, with testing and figures at many stages,
+%         not specific to windows
 
 
 % ok let's go!
@@ -44,7 +43,7 @@ imageName = strcat('glycogen-combo1-',experiment);
 
 
 % initialize total number of movies and timepoints
-xy_final = 16; % total num of xy positions in analysis
+xy_final = 2; % total num of xy positions in analysis
 num_tpt = 241; % total num of timepoints in analysis
 
 
@@ -68,8 +67,8 @@ num_tpt = 241; % total num of timepoints in analysis
 
 %% ONE. TEST ANALYSIS
 %  visualize image analysis parameters on single image
-xy = 16;
-tpt = 50;
+xy = 2;
+tpt = 1;
 
 % initialize xy name
 if xy < 10
@@ -103,22 +102,50 @@ clear ph_name c_name y_name
 
 
 %figure;
-subplot(131); imshow(imadjust(ph_image)); title('phase');         % "imadjust" automatically adjusts brightness of 16-bit image
-subplot(132); imshow(imadjust(c_image)); title('cfp');
-subplot(133); imshow(imadjust(y_image)); title('yfp');
+figure(1); imshow(imadjust(ph_image)); title('phase');         % "imadjust" automatically adjusts brightness of 16-bit image
+figure(2); imshow(imadjust(c_image)); title('cfp');
+figure(3); imshow(imadjust(y_image)); title('yfp');
 
-%%
+%% continue test analysis
+
 % edge detection of cells in phase image
+close all
 bw = edge(ph_image,'sobel');
 
+bg = imgaussfilt(ph_image,0.8);
+bw_g = edge(bg,'sobel');
 
+figure(1); imshowpair(bw,bw_g,'montage'); title('step 1: edge detection');
+
+bw1 = edge(bg,'sobel');
+figure(2); imshow(bw1); title('edge, smoothed')
+
+%%
+bw1 = edge(bw_g,'sobel');
+
+bw2 = edge(bw_g,'Prewitt');
+
+figure(2); imshowpair(bw1,bw2,'montage')
+
+bw3 = bw1+bw2;
+figure(3); imshow(bw3)
+
+bw = bw1;
+%%
 % clean up edge detection
-se = strel('disk',3); % structuring element; disk-shaped with radius of 3 pixels
+se = strel('disk',1); 
+%se = strel('disk',3); % structuring element; disk-shaped with radius of 3 pixels
 bw_dil = imdilate(bw, se); % dilate
+figure(3); imshow(bw_dil); title('step 2: dilate edges');
+
 bw_fill = imfill(bw_dil, 'holes'); % fill
+figure(4); imshow(bw_fill); title('step 3: fill');
+
 bw_final = imerode(imerode(bw_fill,se),se); % erode twice to smooth; this is your final mask
-
-
+figure(5);  imshow(bw_final); title('step 4: erode or smooth');
+%%
+figure(6); imshowpair(imadjust(ph_image),bw_final); title('final mask-phase overlay');
+%%
 % visualize effect of each step of edge detection and cleanup
 figure;
 ax(1) = subplot(231); imshowpair(imadjust(ph_image),bw_final); title('final mask-phase overlay');
@@ -128,7 +155,8 @@ ax(4) = subplot(234); imshow(bw_fill); title('step 3: fill');
 ax(5) = subplot(235); imshow(bw_final); title('step 4: erode or smooth');
 linkaxes(ax(:),'xy'); % link subplots so that you can zoom-in on all subplots simultaneously
 
-%%
+%% continue test analysis
+
 % segment cells
 cc = bwconncomp(bw_final);
 
@@ -144,9 +172,7 @@ figure; histogram(area_conv)
 xlabel('Area (sq microns)')
 ylabel('Count')
 
-
-
-%%
+%% continue test analysis
 % 2. determine which cells are YFP or CFP labeled
 % overlay mask with YFP fluorescence image by dot-product
 y_mask_overlay = bw_final .* double(y_image); % convert your uint16 image to double class
@@ -168,7 +194,8 @@ end
 figure; histogram(y_fluo_int_cells,50); title('yfp'); xlabel('mean intensity')
 figure; histogram(c_fluo_int_cells,50); title('cfp'); xlabel('mean intensity')
 
-%%
+%% continue test analysis
+
 % from the histogram above, it seems like a threshold of around 100 might work
 threshold_yfp = 101;
 threshold_cfp = 103;
@@ -205,7 +232,8 @@ end
 figure; imshowpair(bw_final_y,imadjust(y_image)); title('after thresholding, remaining YFP masks')
 figure; imshowpair(bw_final_c,imadjust(c_image)); title('after thresholding, remaining CFP masks')
 
-%%
+%% continue test analysis
+
 % add YFP or CFP designation to data structure
 %           0 = not above threshold,
 %           1 = YES label! (above threshold)
@@ -265,6 +293,7 @@ p_unit.Angle = angle;
 p_clone(tpt) = p_unit;
 
 %% TWO. FULL ANALYSIS
+
 %  for each xy, loop through all timepoints and build data structure
 
 for xy = 1:xy_final
