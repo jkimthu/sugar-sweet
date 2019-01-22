@@ -17,8 +17,7 @@
 
 
 % last edit: jen, 2019 January 22
-% commit: phase tracking of reduced frequency dataset, xy02
-
+% commit: phase tracking of full130 dataset, xy02, and add dt_min for new buildDM_glycogen
 
 % OK LEZ GO!
 
@@ -32,7 +31,7 @@ clear
 % 0. initialize data
 date = '2018-11-23';
 %cd(strcat('D:\',date))
-load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
+load(strcat('glycogen-',date,'-full130-jiggle-0p5.mat'),'D5');
 
 %%
 % 0. initialize channel and xy movie to analyze
@@ -48,9 +47,10 @@ for xy = 2
     
     
     % 1. compile experiment data matrix
+    dt_min = 2;
     xy_start = xy;
     xy_end = xy;
-    xyData = buildDM_glycogen(D5, xy_start, xy_end);
+    xyData = buildDM_glycogen(D5, xy_start, xy_end,dt_min);
     clear xy_start xy_end
     
     
