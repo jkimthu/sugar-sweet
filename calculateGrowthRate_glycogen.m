@@ -5,20 +5,20 @@
 %       rates. the only growth rate not calculated here is mu.
 
 
-% main difference from original function: no time or curve input. dt is set
-% at 120 sec (2 min), the imaging frequency.
+% main difference from original function: no curve input.
+% dt is the imaging frequency in seconds, a manually defined input.
 
 
 
-% last updated: jen, 2018 October 10
+% last updated: jen, 2019 Jan 22
 
-% commit: edit for use in first glycogen analysis, 2018-10-03 data
+% commit: edit for use in reduced frequency glycogen analysis, 2018-11-23 data
 
 
 % Go go let's go!
 
 %%
-function [growthRates] = calculateGrowthRate_glycogen(volumes,isDrop,trackNum)
+function [growthRates] = calculateGrowthRate_glycogen(volumes,isDrop,trackNum,dt_sec)
 
 % input data:
 %        volumes     =  calculated va_vals (cubic um)
@@ -26,32 +26,32 @@ function [growthRates] = calculateGrowthRate_glycogen(volumes,isDrop,trackNum)
 
 
 % 0. define dt
-dt = 120; % timestep in seconds
+%dt = 120; % timestep in seconds
 
 
 % 1. calculate dVdt
 dV_noNan = diff(volumes);
 dV = [NaN; dV_noNan];
-dVdt_raw = dV/dt * 3600;                % final units = cubic um/hr
+dVdt_raw = dV/dt_sec * 3600;                % final units = cubic um/hr
 
 
 
 % 2. calculate dVdt_norm (normalized by initial volume)
 dV_norm = [NaN; dV_noNan./volumes(1:end-1)];
-dVdt_norm = dV_norm/dt * 3600;          % final units = 1/hr   
+dVdt_norm = dV_norm/dt_sec * 3600;          % final units = 1/hr   
         
 
                 
 % 3. calculate dVdt_log = d(log V)/dt
 dV_log_noNan = diff(log(volumes));
 dV_log = [NaN; dV_log_noNan];
-dVdt_log = dV_log/dt * 3600;           % final units = cubic um/hr
+dVdt_log = dV_log/dt_sec * 3600;           % final units = cubic um/hr
 dVdt_log2 = dVdt_log/log(2);
 
 
 % 4. calculate dVdt_lognorm = d(log V)/dt normalized by initial volume
 dV_lognorm = [NaN; dV_log_noNan./volumes(1:end-1)];
-dVdt_lognorm = dV_lognorm/dt * 3600;         % final units = 1/hr
+dVdt_lognorm = dV_lognorm/dt_sec * 3600;         % final units = 1/hr
 
 
 
