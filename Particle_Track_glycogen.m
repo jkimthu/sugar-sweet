@@ -5,8 +5,8 @@ PlotFlag=0;
 % 8/5/2011
 % MIT
 
-% last edit: Jen Nguyen 2019 Jan 15
-% commit: adds eccentricity and angle glycogen analysis
+% last edit: Jen Nguyen 2019 Jan 22
+% commit: minor capitalization change while troubleshooting particle tracking 
 
 
 % "trackmode" = use nearest neighbors or predictive methods ['position', 'velocity', or 'acceleration']
@@ -61,7 +61,7 @@ for n = 1:N_frames
         continue        
     elseif particles(n).Frame-particles(n-1).Frame ~= 1
         N_tracks = length(ParticleTracks);
-        ParticleTracks(N_Tracks+[1:N_now])=num2cell(particleMat,2);
+        ParticleTracks(N_tracks+[1:N_now])=num2cell(particleMat,2);
         active = (N_tracks+1):(N_tracks+N_now);
         continue  
     elseif N_now==0
