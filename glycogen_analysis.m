@@ -15,8 +15,7 @@
 
 
 % last update: Jen, 2019 Jan 22
-% commit: successful tracking of reduced frequency xy02 in 2018-11-23, no
-%         fluor analysis yet
+% commit: successful tracking of full130 xy02 in 2018-11-23, no fluor analysis yet
 
 
 % ok let's go!
@@ -36,8 +35,8 @@ experiment = '2018-11-23';
 
 
 % open folder for experiment of interest
-%imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full'); % _xy02 for folder
-imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02'); % _xy02 for folder
+imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full'); % _xy02 for folder
+%imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02'); % _xy02 for folder
 cd(imageFolder); % move to the folder containing images 
 
 
@@ -50,7 +49,7 @@ xy_final = 2; % total num of xy positions in analysis
 
 
 % initialize array of desired timepoints
-selected_tpt = linspace(1,241,17);
+selected_tpt = linspace(1,130,130);
 
 %% 1. particle identification, characterization and tracking
 %
@@ -273,7 +272,7 @@ for xy = 2:xy_final
     
 end
 
-save(strcat('glycogen-',experiment,'-earlyEdits.mat'),'D')  
+save(strcat('glycogen-',experiment,'-full130.mat'),'D')  
 
 
 %% 2. quality control: clean dataset prior to growth rate calculations
@@ -301,10 +300,11 @@ clc
 experiment = '2018-11-23';
 
 % 0. open folder for experiment of interest
-newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02');%,'  (t300)');
+newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full')
+%newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02');%,'  (t300)');
 cd(newFolder);
 
-load(strcat('glycogen-',experiment,'-earlyEdits.mat'));
+load(strcat('glycogen-',experiment,'-full130.mat'));
 
 % reject data matrix
 rejectD = cell(4,length(D));
@@ -607,7 +607,7 @@ end
 
 clear SizeStrainer n i m tooSmalls X;
 
-save(strcat('glycogen-',experiment,'-earlyEdits-jiggle-0p5.mat'), 'D', 'D2', 'D3', 'D4', 'D5', 'rejectD')
+save(strcat('glycogen-',experiment,'-full130-jiggle-0p5.mat'), 'D', 'D2', 'D3', 'D4', 'D5', 'rejectD')
 disp('Quality control: complete!')
 
 
