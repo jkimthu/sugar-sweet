@@ -9,13 +9,14 @@
 %                1. particle identification, characterization and tracking
 %                2. quality control: clean dataset prior to growth rate calculations
 %                3. fun part! compute population growth rates between YFP and CFP populations
-%                4. 
-%
 
-% BIIIIG thank yous to Cherry Gao for helping me get started!
 
-% last update: Jen, 2018 October 10
-% commit: first commit! first look at first experiment, 2018-10-03
+% BIIIIG thank yous to Cherry Gao and Vicente Fernandez for the start-up help and tips!
+
+
+% last update: Jen, 2019 Jan 22
+% commit: successful tracking of reduced frequency xy02 in 2018-11-23, no
+%         fluor analysis yet
 
 
 % ok let's go!
@@ -31,11 +32,12 @@ ConversionFactor = 6.5/60; % units = um/pixel
 
 
 % initialize experiment folder
-experiment = '2018-10-03';
+experiment = '2018-11-23';
 
 
 % open folder for experiment of interest
-imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment);
+%imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full'); % _xy02 for folder
+imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02'); % _xy02 for folder
 cd(imageFolder); % move to the folder containing images 
 
 
@@ -44,8 +46,11 @@ imageName = strcat('glycogen-combo1-',experiment);
 
 
 % initialize total number of movies
-xy_final = 20; % total num of xy positions in analysis
+xy_final = 2; % total num of xy positions in analysis
 
+
+% initialize array of desired timepoints
+selected_tpt = linspace(1,241,17);
 
 %% 1. particle identification, characterization and tracking
 %
@@ -67,7 +72,7 @@ xy_final = 20; % total num of xy positions in analysis
 
 
 % for each xy, loop through all timepoints and build data structure
-for xy = 1:xy_final
+for xy = 2:xy_final
     
     % initialize xy name
     if xy < 10
@@ -77,7 +82,9 @@ for xy = 1:xy_final
     end
     
     
-    for tpt = 1:75
+    for i = 1:length(selected_tpt)
+        
+        tpt = selected_tpt(i);
         
         % initialize timepoint name
         if tpt < 10
@@ -102,32 +109,19 @@ for xy = 1:xy_final
         clear ph_name c_name y_name
         
         
-
-        %figure;
-        %subplot(131); imshow(imadjust(ph_image)); title('phase');         % "imadjust" automatically adjusts brightness of 16-bit image
-        %subplot(132); imshow(imadjust(c_image)); title('cfp');
-        %subplot(133); imshow(imadjust(y_image)); title('yfp');
+        % gaussian smoothing of phase image
+        ph_smoothed = imgaussfilt(ph_image,0.8);
         
         
         % edge detection of cells in phase image
-        bw = edge(ph_image,'sobel');
+        bw = edge(ph_smoothed,'sobel');
         
         
         % clean up edge detection
-        se = strel('disk',3); % structuring element; disk-shaped with radius of 3 pixels
+        se = strel('disk',1); % structuring element; disk-shaped with radius of 3 pixels
         bw_dil = imdilate(bw, se); % dilate
         bw_fill = imfill(bw_dil, 'holes'); % fill
         bw_final = imerode(imerode(bw_fill,se),se); % erode twice to smooth; this is your final mask
-        
-        
-        % visualize effect of each step of edge detection and cleanup
-        %figure;
-        %ax(1) = subplot(231); imshowpair(imadjust(ph_image),bw_final); title('final mask-phase overlay');
-        %ax(2) = subplot(232); imshow(bw); title('step 1: edge detection');
-        %ax(3) = subplot(233); imshow(bw_dil); title('step 2: dilate edges');
-        %ax(4) = subplot(234); imshow(bw_fill); title('step 3: fill');
-        %ax(5) = subplot(235); imshow(bw_final); title('step 4: erode or smooth');
-        %linkaxes(ax(:),'xy'); % link subplots so that you can zoom-in on all subplots simultaneously
         
         
         % segment cells
@@ -135,14 +129,8 @@ for xy = 1:xy_final
         
         
         % gather properties for each identified particle
-        stats = regionprops(cc,'Area','Centroid','MajorAxisLength','MinorAxisLength');
-        
-        
-        % visualize distribution of cell areas
-        %area = extractfield(stats,'Area')';
-        %area_conv = area.*ConversionFactor^2;
-        %figure; histogram(area_conv)
-        
+        stats = regionprops(cc,'Area','Centroid','MajorAxisLength','MinorAxisLength','Eccentricity','Orientation');
+      
         clear bw bw_dil bw_fill
         
         
@@ -153,64 +141,33 @@ for xy = 1:xy_final
         c_mask_overlay = bw_final .* double(c_image);
         
         % compute the fluorescence intensity value for each cell
-        for cell = 1:cc.NumObjects;
+        for c = 1:cc.NumObjects;
             
             pixel_id_of_cell = []; % initialize
-            pixel_id_of_cell = cc.PixelIdxList{cell}; % pixel index where the cell of interest is
+            pixel_id_of_cell = cc.PixelIdxList{c}; % pixel index where the cell of interest is
             
-            y_fluo_int_cells(cell) = mean(y_mask_overlay(pixel_id_of_cell)); % compute the mean intensity of pixels in the cell
-            c_fluo_int_cells(cell) = mean(c_mask_overlay(pixel_id_of_cell));
+            y_fluo_int_cells(c) = mean(y_mask_overlay(pixel_id_of_cell)); % compute the mean intensity of pixels in the cell
+            c_fluo_int_cells(c) = mean(c_mask_overlay(pixel_id_of_cell));
             
         end
         clear bw_final
         
-        % look at the distribution of YFP intensities of cells to determine a threshold
-        %figure; histogram(y_fluo_int_cells,50);
-        %figure; histogram(c_fluo_int_cells,50);
-        
-        % from the histogram above, it seems like a threshold of around 100 might work
-        threshold_yfp = 101;
-        threshold_cfp = 103;
-        
-        % let's see how good the threshold is!
-        % in this for-loop, you will
-        % 1) erase the masks of YFP-negative cells
-        % 2) output the cell ID numbers of YFP-positive cells
-        
-        %bw_final_y = bw_final; % initialize
-        %bw_final_c = bw_final; % initialize
 
-        for cell = 1:cc.NumObjects;
+
+        % add mean fluorescent intensity of each cell to data structure
+        for c = 1:cc.NumObjects;
             
             % yfp
-            if y_fluo_int_cells(cell) < threshold_yfp;
-                %bw_final_y(cc.PixelIdxList{cell}) = 0;   % erase the YFP-negative cells
-                stats(cell).yfp = 0;
-            else
-                stats(cell).yfp = 1;
-            end
+            stats(c).yfp = y_fluo_int_cells(c);
             
             % cfp
-            if c_fluo_int_cells(cell) < threshold_cfp;
-                %bw_final_c(cc.PixelIdxList{cell}) = 0;    % erase the CFP-negative cells
-                stats(cell).cfp = 0;
-            else
-                stats(cell).cfp = 1;
-            end
-            
+            stats(c).cfp = c_fluo_int_cells(c);
+           
         end
-        
-        % let's see if the threshold worked
-        %figure; imshowpair(bw_final_y,imadjust(y_image)); title('after thresholding, remaining masks')
-        %figure; imshowpair(bw_final_c,imadjust(c_image)); title('after thresholding, remaining masks')
-        
-        % add YFP or CFP designation to data structure
-        %           0 = not above threshold,
-        %           1 = YES label! (above threshold)
         clear ph_image y_image c_image y_mask_overlay c_mask_overlay
         
         
-        
+  
         
         % 3. assemble data structure similar to P from ND2Proc_XY.m in order to use track linker
         
@@ -246,16 +203,23 @@ for xy = 1:xy_final
         
         
         % YFP or CFP cell?
-        isYFP = extractfield(stats,'yfp')';
-        isCFP = extractfield(stats,'cfp')';
-        p_unit.yfp = isYFP;
-        p_unit.cfp = isCFP;
-        clear isYFP isCFP
+        YFP = extractfield(stats,'yfp')';
+        CFP = extractfield(stats,'cfp')';
+        p_unit.yfp = YFP;
+        p_unit.cfp = CFP;
+        clear YFP CFP
         
         % frame
-        p_unit.Frame = tpt;
+        p_unit.Frame = i;
         
-        p_clone(tpt) = p_unit;
+        
+        % eccentricity and angle
+        ecc = extractfield(stats,'Eccentricity')';
+        angle = extractfield(stats,'Orientation')';
+        p_unit.Ecc = ecc;
+        p_unit.Angle = angle;
+        
+        p_clone(i) = p_unit;
 
     end
     
@@ -274,14 +238,15 @@ for xy = 1:xy_final
     % trim particles by width
     
     TrimField = 'MinAx';  % choose relevant characteristic to restrict, run several times to apply for several fields
-    LowerBound = 1.0;     % lower bound for restricted field, or -Inf
-    UpperBound = 1.7;     % upper bound for all conditions
+    LowerBound = 0.7;     % lower bound for restricted field, or -Inf
+    UpperBound = 1.4;     % upper bound for all conditions
 
     % to actually trim the set:
     p_clone_trim2 = ParticleTrim_glycogen(p_clone_trim1,TrimField,LowerBound,UpperBound);
     
     
-    %
+    % remove rows without data
+    
     % v. track remaining particles based on coordinate distance
     
     TrackMode = 'position';       % Choice of {position, velocity, acceleration} to predict position based on previous behavior
@@ -290,15 +255,25 @@ for xy = 1:xy_final
     p_Tracks = Particle_Track_glycogen(p_clone_trim2,TrackMode,DistanceLimit,MatchMethod);
     
     
+    
+    % vi. link tracks together and store in data matrix!
+    
+    PT = TrackLinker(p_Tracks, 'position', 'position', 5, 3, 2);
+    TL=TrackLength(PT);
+    PT(TL<8)=[];
+    A=arrayfun(@(Q) max(Q.Area),PT);
+
+    
     % 4. Store tracked data into single workspace, D
-    D{xy} = p_Tracks;
+    D{xy} = PT;
+    %D{xy} = p_Tracks;
     
     disp(strcat('analyzed xy(',num2str(xy),') of (',num2str(xy_final),')!'))
     
     
 end
 
-save(strcat('glycogen-',experiment,'-width1p7.mat'),'D')  
+save(strcat('glycogen-',experiment,'-earlyEdits.mat'),'D')  
 
 
 %% 2. quality control: clean dataset prior to growth rate calculations
@@ -323,13 +298,13 @@ save(strcat('glycogen-',experiment,'-width1p7.mat'),'D')
 % particle tracking data
 clear
 clc
-experiment = '2018-10-03';
+experiment = '2018-11-23';
 
 % 0. open folder for experiment of interest
-newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment);%,'  (t300)');
+newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02');%,'  (t300)');
 cd(newFolder);
 
-load(strcat('glycogen-',experiment,'-width1p7.mat'));
+load(strcat('glycogen-',experiment,'-earlyEdits.mat'));
 
 % reject data matrix
 rejectD = cell(4,length(D));
@@ -412,18 +387,18 @@ for n = 1:length(D);
     X = ['Clipping ', num2str(jump_counter), ' jumps in D2(', num2str(n), ')...'];
     disp(X)
     
-    % when all tracks finished, 
-    if jump_counter >= 1
-        
-        % 7. save accmulated rejects
-        rejectD{criteria_counter,n} = trackScraps;
-        
-        % 8. and insert data after jump at end of data matrix, D2
-        D2{n} = [data; trackScraps];
-    
-    else
-        D2{n} = data;
-    end
+    %     % when all tracks finished,
+    %     if jump_counter >= 1
+    %
+    %         % 7. save accmulated rejects
+    %         rejectD{criteria_counter,n} = trackScraps;
+    %
+    %         % 8. and insert data after jump at end of data matrix, D2
+    %         D2{n} = [data; trackScraps];
+    %
+    %     else
+    D2{n} = data;
+    %     end
     
     % 9. repeat for all movies
     clear trackScraps X data;
@@ -632,7 +607,7 @@ end
 
 clear SizeStrainer n i m tooSmalls X;
 
-save(strcat('glycogen-',experiment,'-width1p7-jiggle-0p5.mat'), 'D', 'D2', 'D3', 'D4', 'D5', 'rejectD')
+save(strcat('glycogen-',experiment,'-earlyEdits-jiggle-0p5.mat'), 'D', 'D2', 'D3', 'D4', 'D5', 'rejectD')
 disp('Quality control: complete!')
 
 
@@ -642,7 +617,7 @@ clear
 clc
 
 % define experiment of interest
-date = '2018-10-03';
+date = '2018-11-23';
 
 % define growth rates of interest
 specificGrowthRate = 'log2';
@@ -652,35 +627,42 @@ specificBinning = 15; % 10 min time bins
 binsPerHour = 60/specificBinning;
 
 % load measured experiment data
-experimentFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date);
+experimentFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02');
 cd(experimentFolder)
-filename = strcat('glycogen-',date,'-width1p7-jiggle-0p5.mat');
+filename = strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat');
 load(filename,'D5');
 
 
+% define timestep between frames in minutes
+dt = 30; % min
+
+
 % assemble data matrix from all xy positions
-xy_start = 1;
-xy_end = 20;
+xy_start = 2;
+xy_end = 2;
 glycogen_data = buildDM_glycogen(D5, xy_start, xy_end);
 
 
 % isolate volume (Va), drop, track number, and fluorescent label data
-volumes = glycogen_data(:,4);        % col 4 = calculated va_vals (cubic um)
-isDrop = glycogen_data(:,2);         % col 2 = isDrop, 1 marks a birth event
-trackNum = glycogen_data(:,9);       % col 9 = track number (not ID from particle tracking)
-isYFP = glycogen_data(:,10);         % col 10 = 1 if above YFP threshold
-isCFP = glycogen_data(:,11);         % col 11 = 1 if above CFP threshold
+volumes = glycogen_data(:,5);        % col 5 = calculated va_vals (cubic um)
+isDrop = glycogen_data(:,3);         % col 3 = isDrop, 1 marks a birth event
+trackNum = glycogen_data(:,12);      % col 12 = track number (not ID from particle tracking)
+CFP = glycogen_data(:,13);           % col 13 = mean CFP signal in particle
+YFP = glycogen_data(:,14);           % col 14 = mean YFP signal in particle
+
 
 
 % calculate growth rate
-growthRates = calculateGrowthRate_glycogen(volumes,isDrop,trackNum);
+dt_sec = dt*60; % imaging frequency in seconds (1800 sec = 30 min)
+growthRates = calculateGrowthRate_glycogen(volumes,isDrop,trackNum,dt_sec);
 
 
 
 % truncate data to non-erroneous (e.g. bubbles) timestamps
-maxTime = 1.5; % in hours
+maxTime = 8; % in hours
 frame = glycogen_data(:,8);      % col 8 = frame in image sequence
-timeInSeconds = frame * 120;     % 2 min per frame
+%timeInSeconds = frame * 120;     % 2 min per frame
+timeInSeconds = frame * dt_sec;     % 30 min per frame
 timeInHours = timeInSeconds/3600;
 
 
@@ -696,7 +678,7 @@ clear maxTime frame timeInSeconds timeInHours
 
 % bin growth rate into time bins based on timestamp
 frame = glycogenData_bubbleTrimmed(:,8);      % col 8 = frame in image sequence
-timeInSeconds = frame * 120;     % 2 min per frame
+timeInSeconds = frame * dt_sec;     
 timeInHours = timeInSeconds/3600;
 bins = ceil(timeInHours*binsPerHour);
 
@@ -709,8 +691,8 @@ growthRate_log2 = growthRates_bubbleTrimmed(:,specificColumn);
 
 growthRt_noNaNs = growthRate_log2(~isnan(growthRate_log2),:);
 bins_noNaNs = bins(~isnan(growthRate_log2),:);
-isYFP_noNaNs = isYFP(~isnan(growthRate_log2),:);
-isCFP_noNaNs = isCFP(~isnan(growthRate_log2),:);
+isYFP_noNaNs = YFP(~isnan(growthRate_log2),:);
+isCFP_noNaNs = CFP(~isnan(growthRate_log2),:);
 
 
 % separate YFP and CFP populations
