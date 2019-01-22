@@ -6,12 +6,12 @@
 
 % adapted from original buildDM, but streamlined for glycogen proejct analysis
 
-% last updated: jen, 2019 January 16
+% last updated: jen, 2019 January 22
 
-% commit: minor edits for comment clarity
+% commit: add dt as input for variable timesteps
 
 
-function [dm] = buildDM_glycogen(D5,xy_start,xy_end)
+function [dm] = buildDM_glycogen(D5,xy_start,xy_end,dt)
 %% initialize all values
   
 tn_counter = 0;
@@ -49,7 +49,7 @@ for n = xy_start:xy_end % n = each inidividual xy position from experiment (movi
         trackNum = [trackNum; tnTrack];
         
         %% time
-        timeTrack = (frameTrack-1)*2;  % experiment 2018-11-23 imaged every 2 min            
+        timeTrack = (frameTrack-1)*dt;  % dt = timestep between frames in min
         Time = [Time; timeTrack];                                         
         clear frameTrack
         
