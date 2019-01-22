@@ -1,7 +1,7 @@
-% dynamicOutlines - glycogen - phase
+% dynamicOutlines - glycogen - cfp
 
 % Goal: this version of dynamicOutlines displays colored outlines of 
-%       tracked cells on phase images
+%       tracked cells on cfp images
 
 
 % Strategy:
@@ -11,13 +11,13 @@
 %     2. identify tracks in rejects. all others are tracked.
 %     3. for each image, initialize current image
 %            4. define major axes, centroids, angles
-%            5. draw ellipses from image, based on presence of tracked cell             
+%            5. draw ellipses from image, color based on presence of tracked cell (no color designation yet)                
 %           6. display and save
 %     7. woohoo!
 
 
 % last edit: jen, 2019 January 22
-% commit: phase tracking of reduced frequency dataset, xy02
+% commit: cfp tracking of reduced frequency dataset, xy02
 
 
 % OK LEZ GO!
@@ -31,12 +31,11 @@ clear
 
 % 0. initialize data
 date = '2018-11-23';
-%cd(strcat('D:\',date))
 load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
 
 %%
 % 0. initialize channel and xy movie to analyze
-channel = 'c1';  % phase = c1; c2 = CFP; c3 = YFP)
+channel = 'c2';  % phase = c1; c2 = CFP; c3 = YFP)
 
 for xy = 2
     
@@ -60,7 +59,7 @@ for xy = 2
     
     % 3. create directory of image names in chronological order
     %imgDirectory = dir(strcat('glycogen-combo1-',date,'t*.tif'));
-    imgDirectory = dir(strcat('*',xy_nomen,'c1.tif'));
+    imgDirectory = dir(strcat('*',xy_nomen,channel,'.tif'));
     names = {imgDirectory.name};
     
     
@@ -83,10 +82,10 @@ for xy = 2
         % i. initialize current image
         cla
         I=imread(names{img});
-        filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-frame',num2str(img),'.tif');
+        filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-frame',num2str(img),'-cfp.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[100 150]); % 2018-11-23
+        imshow(I, 'DisplayRange',[100 140]); % 2018-11-23
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
