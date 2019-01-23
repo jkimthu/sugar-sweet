@@ -13,7 +13,7 @@
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
 % last update: Jen, 2019 January 23
-% commit: edit figure titles for clarity
+% commit: successful splitting of populations by threshold of 103.4
 
 
 % ok let's go!
@@ -243,10 +243,10 @@ clear majorAxis minorAxis
 
 
 % YFP or CFP cell?
-isYFP = extractfield(stats,'yfp')';
-isCFP = extractfield(stats,'cfp')';
-p_unit.yfp = isYFP;
-p_unit.cfp = isCFP;
+yfp = extractfield(stats,'yfp')';
+cfp = extractfield(stats,'cfp')';
+p_unit.yfp = yfp;
+p_unit.cfp = cfp;
 clear isYFP isCFP
 
 % frame
@@ -450,10 +450,10 @@ for xy = 1:xy_final
         
         
         % YFP or CFP cell?
-        isYFP = extractfield(stats,'yfp')';
-        isCFP = extractfield(stats,'cfp')';
-        p_unit.yfp = isYFP;
-        p_unit.cfp = isCFP;
+        yfp = extractfield(stats,'yfp')';
+        cfp = extractfield(stats,'cfp')';
+        p_unit.yfp = yfp;
+        p_unit.cfp = cfp;
         clear isYFP isCFP
         
         
@@ -1232,48 +1232,55 @@ end
 clear
 clc
 
-% define experiment of interest
-date = '2018-11-23';
-
-% define growth rates of interest
-specificGrowthRate = 'log2';
-
-% define time binning parameters
-specificBinning = 10; % 10 min time bins
-binsPerHour = 60/specificBinning;
-
-% load measured experiment data
-%experimentFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date);
-%cd(experimentFolder)
-filename = strcat('glycogen-',date,'-width1p4-jiggle-0p5.mat');
-load(filename,'D5');
-
-
-% assemble data matrix from all xy positions
+% 0. initialize data
+%xy = 2;
 xy_start = 1;
 xy_end = 16;
-glycogen_data = buildDM_glycogen(D5, xy_start, xy_end);
+dt_min = 2;
+%dt_min = 30; % reduced frequency dataset
+
+date = '2018-11-23';
+%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02'))
+%load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
+cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
+load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
 
-% isolate volume (Va), drop, track number, and fluorescent label data
-volumes = glycogen_data(:,4);        % col 4 = calculated va_vals (cubic um)
-isDrop = glycogen_data(:,2);         % col 2 = isDrop, 1 marks a birth event
-trackNum = glycogen_data(:,9);       % col 9 = track number (not ID from particle tracking)
-isYFP = glycogen_data(:,10);         % col 10 = 1 if above YFP threshold
-isCFP = glycogen_data(:,11);         % col 11 = 1 if above CFP threshold
+% 0. define growth rates of interest
+specificGrowthRate = 'log2';
 
 
-% calculate growth rate
-growthRates = calculateGrowthRate_glycogen(volumes,isDrop,trackNum);
+% 0. define time binning parameters
+specificBinning = 60; % in minutes
+binsPerHour = 60/specificBinning;
 
 
+% 0. define fluorescence intensity threshold
+threshold = 103.4;
 
-% truncate data to non-erroneous (e.g. bubbles) timestamps
+
+% 1. assemble data matrix
+glycogen_data = buildDM_glycogen(D5, xy_start, xy_end, dt_min);
+clear xy_start xy_end
+
+
+% 2. isolate volume (Va), drop, track number, and fluorescent label data
+volumes = glycogen_data(:,5);        % col 4 = calculated va_vals (cubic um)
+isDrop = glycogen_data(:,3);         % col 2 = isDrop, 1 marks a birth event
+trackNum = glycogen_data(:,12);      % col 12 = track number (not ID from particle tracking)
+
+
+% 3. calculate growth rate
+dt_sec = dt_min * 60;
+growthRates = calculateGrowthRate_glycogen(volumes,isDrop,trackNum,dt_sec);
+clear isDrop volumes trackNum dt_min
+
+
+% 4. truncate data to non-erroneous (e.g. bubbles) timestamps
 maxTime = 8; % in hours
-frame = glycogen_data(:,8);      % col 8 = frame in image sequence
-timeInSeconds = frame * 120;     % 2 min per frame
+frame = glycogen_data(:,9);      % col 9 = frame in image sequence
+timeInSeconds = frame * dt_sec;  % frame = is consequetive images in analysis
 timeInHours = timeInSeconds/3600;
-
 
 if maxTime > 0
     glycogenData_bubbleTrimmed = glycogen_data(timeInHours <= maxTime,:);
@@ -1285,46 +1292,91 @@ end
 clear maxTime frame timeInSeconds timeInHours
 
 
-% bin growth rate into time bins based on timestamp
-frame = glycogenData_bubbleTrimmed(:,8);      % col 8 = frame in image sequence
-timeInSeconds = frame * 120;     % 2 min per frame
+% 5. bin growth rate into time bins based on timestamp
+frame = glycogenData_bubbleTrimmed(:,9);      % col 9 = frame in image sequence
+timeInSeconds = frame * dt_sec;    
 timeInHours = timeInSeconds/3600;
 bins = ceil(timeInHours*binsPerHour);
+clear timeInSeconds frame
 
 
-% isolate selected specific growth rate and remove nans from data analysis
+% 6. isolate selected specific growth rate and remove nans from data analysis
 specificColumn = 3;
-xmin = -0.5;
-xmax = 2.5;
 growthRate_log2 = growthRates_bubbleTrimmed(:,specificColumn);
 
 growthRt_noNaNs = growthRate_log2(~isnan(growthRate_log2),:);
 bins_noNaNs = bins(~isnan(growthRate_log2),:);
-isYFP_noNaNs = isYFP(~isnan(growthRate_log2),:);
-isCFP_noNaNs = isCFP(~isnan(growthRate_log2),:);
+glycogenData_noNaNs = glycogenData_bubbleTrimmed(~isnan(growthRate_log2),:);
 
 
-% separate YFP and CFP populations
-isBoth = isYFP_noNaNs+isCFP_noNaNs;
+% 7. isolate YFP and CFP intensities
+cfp = glycogenData_noNaNs(:,13);         % col 13 = mean CFP intensity
+yfp = glycogenData_noNaNs(:,14);         % col 14 = mean YFP intensity
+
+
+% 8. convert intensities to (+) or (-) fluorophore
+isCFP = cfp > threshold;
+isYFP = yfp > threshold;
+
+
+
+% 9. test threshold, throw error if any points are identified as both
+isBoth = isCFP+isYFP;
+if sum(isBoth == 2) > 0
+    error('threshold fail! some cells positive for both fluorophores')
+end
+
+% this step doesn't matter as long as threshold doesn't allow double-positives
 growthRt_final = growthRt_noNaNs(isBoth < 2);
+glycogenData_final = glycogenData_noNaNs(isBoth < 2,:);
 bins_final = bins_noNaNs(isBoth < 2);
-isYFP_final = isYFP_noNaNs(isBoth < 2);
-isCFP_final = isCFP_noNaNs(isBoth < 2);
-
-growthRt_yfp = growthRt_final(isYFP_final == 1);
-growthRt_cfp = growthRt_final(isCFP_final == 1);
+isYFP_final = isYFP(isBoth < 2);
+isCFP_final = isCFP(isBoth < 2);
 
 
 
-% bin growth rate by time
-bins_yfp = bins_final(isYFP_final == 1);
-bins_cfp = bins_final(isCFP_final == 1);
+% 10. separate growth rates by fluorophore
 
+% growthRt_yfp = growthRt_final(isYFP_final == 1);
+% growthRt_cfp = growthRt_final(isCFP_final == 1);
+
+% above method only takes growth rates if the cell is actively labeled.
+% however, all the growth rates should be taken into account! instead, pull
+% out IDs that are identified with YFP or CFP and use these to 
+trackNum = glycogenData_final(:,12); % col 12 = track num
+IDs_yfp = unique(trackNum(isYFP_final == 1));
+IDs_cfp = unique(trackNum(isCFP_final == 1));
+
+IDs_labeled = [IDs_yfp; IDs_cfp];
+
+growthRt_yfp = [];
+growthRt_cfp = [];
+bins_yfp = [];
+bins_cfp = [];
+for id = 1:length(IDs_labeled)
+    
+    currentID = IDs_labeled(id);
+    currentGR = growthRt_final(trackNum == currentID);
+    currentBins = bins_final(trackNum == currentID);
+    
+    if ismember(currentID,IDs_yfp) == 1 % if ID belongs to YFP+
+        growthRt_yfp = [growthRt_yfp; currentGR];
+        bins_yfp = [bins_yfp; currentBins];
+    else % else
+        growthRt_cfp = [growthRt_cfp; currentGR];
+        bins_cfp = [bins_cfp; currentBins];
+    end
+    
+end
+clear currentID currentGR currentBins
+
+
+% 11. bin growth rate by time
 binned_yfp = accumarray(bins_yfp,growthRt_yfp,[],@(x) {x});
 binned_cfp = accumarray(bins_cfp,growthRt_cfp,[],@(x) {x});
 
 
-% calculate mean, standard dev, counts, and standard error
+% 12. calculate mean, standard dev, counts, and standard error
 y_bin_means = cellfun(@mean,binned_yfp);
 y_bin_stds = cellfun(@std,binned_yfp);
 y_bin_counts = cellfun(@length,binned_yfp);
@@ -1350,12 +1402,11 @@ hold on
 errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_color)
 hold on
 grid on
-axis([0,max(timeInHours)+0.1,xmin,xmax])
+axis([0,8.5,-1,1])
 xlabel('Time (hr)')
 ylabel('Growth rate')
 title(strcat(date,': (',specificGrowthRate,')'))
-legend('YFP mutant', 'CFP WT')
-
+legend('YFP WT', 'CFP mutant')
 
 
 
