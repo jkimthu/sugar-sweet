@@ -15,7 +15,7 @@
 
 
 % last update: Jen, 2019 Jan 22
-% commit: successful tracking of full130 xy02 in 2018-11-23, no fluor analysis yet
+% commit: edited particle tracking of full 2018-11-23
 
 
 % ok let's go!
@@ -35,9 +35,9 @@ experiment = '2018-11-23';
 
 
 % open folder for experiment of interest
-imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full'); % _xy02 for folder
+%imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full'); % _xy02 for folder
 %imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02'); % _xy02 for folder
-cd(imageFolder); % move to the folder containing images 
+%cd(imageFolder); % move to the folder containing images 
 
 
 % initialize image names
@@ -45,11 +45,11 @@ imageName = strcat('glycogen-combo1-',experiment);
 
 
 % initialize total number of movies
-xy_final = 2; % total num of xy positions in analysis
+xy_final = 16; % total num of xy positions in analysis
 
 
 % initialize array of desired timepoints
-selected_tpt = linspace(1,130,130);
+selected_tpt = linspace(1,241,241);
 
 %% 1. particle identification, characterization and tracking
 %
@@ -71,7 +71,7 @@ selected_tpt = linspace(1,130,130);
 
 
 % for each xy, loop through all timepoints and build data structure
-for xy = 2:xy_final
+for xy = 1:xy_final
     
     % initialize xy name
     if xy < 10
@@ -272,7 +272,7 @@ for xy = 2:xy_final
     
 end
 
-save(strcat('glycogen-',experiment,'-full130.mat'),'D')  
+save(strcat('glycogen-',experiment,'-allXYs.mat'),'D')  
 
 
 %% 2. quality control: clean dataset prior to growth rate calculations
@@ -300,11 +300,11 @@ clc
 experiment = '2018-11-23';
 
 % 0. open folder for experiment of interest
-newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full')
+%newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full')
 %newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02');%,'  (t300)');
-cd(newFolder);
+%cd(newFolder);
 
-load(strcat('glycogen-',experiment,'-full130.mat'));
+load(strcat('glycogen-',experiment,'-allXYs.mat'));
 
 % reject data matrix
 rejectD = cell(4,length(D));
@@ -607,7 +607,7 @@ end
 
 clear SizeStrainer n i m tooSmalls X;
 
-save(strcat('glycogen-',experiment,'-full130-jiggle-0p5.mat'), 'D', 'D2', 'D3', 'D4', 'D5', 'rejectD')
+save(strcat('glycogen-',experiment,'-allXYs-jiggle-0p5.mat'), 'D', 'D2', 'D3', 'D4', 'D5', 'rejectD')
 disp('Quality control: complete!')
 
 
