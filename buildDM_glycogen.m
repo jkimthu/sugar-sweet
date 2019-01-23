@@ -6,9 +6,9 @@
 
 % adapted from original buildDM, but streamlined for glycogen proejct analysis
 
-% last updated: jen, 2019 January 22
+% last updated: jen, 2019 January 23
 
-% commit: add dt as input for variable timesteps
+% commit: edit major error, YFP intensity was being assigned CFP data
 
 
 function [dm] = buildDM_glycogen(D5,xy_start,xy_end,dt)
@@ -113,7 +113,7 @@ for n = xy_start:xy_end % n = each inidividual xy position from experiment (movi
         cfpTrack = D5{n}(m).CFP;
         CFP = [CFP; cfpTrack];
         
-        yfpTrack = D5{n}(m).CFP;
+        yfpTrack = D5{n}(m).YFP;
         YFP = [YFP; yfpTrack];
         
         clear cfpTrack yfpTrack
