@@ -8,7 +8,7 @@
 
 % last updated: jen, 2019 January 23
 
-% commit: edit major error, YFP intensity was being assigned CFP data
+% commit: add particleID to data matrix
 
 
 function [dm] = buildDM_glycogen(D5,xy_start,xy_end,dt)
@@ -32,6 +32,7 @@ angle = [];             % 11. angle of rotation of fit ellipse
 trackNum = [];          % 12. trackNum  =  total track number (vs ID which is xy based)
 CFP = [];               % 13. CFP
 YFP = [];               % 14. YFP
+particleID = [];        % 15. particleID from tracking
 
 %% loop through all xy positions and all tracks for data concatenation
 
@@ -39,9 +40,14 @@ for n = xy_start:xy_end % n = each inidividual xy position from experiment (movi
     
     for m = 1:length(D5{n}) % m = each individual cell track from current movie
    
-        %% frame number in original image
+        % frame number in original image
         frameTrack = D5{n}(m).Frame;
         orig_frame = [orig_frame; frameTrack];
+        
+        %% particleID from particle tracking
+        
+        idTrack = ones(length(frameTrack),1)*m;
+        particleID = [particleID; idTrack];
         
         %% track number
         tn_counter = tn_counter + 1;
@@ -126,7 +132,7 @@ end % for n
 
 
 % compile data into single matrix
-dm = [Time lengthVals isDrop widthVals vaVals surfaceArea x_pos y_pos orig_frame eccentricity angle trackNum CFP YFP];
+dm = [Time lengthVals isDrop widthVals vaVals surfaceArea x_pos y_pos orig_frame eccentricity angle trackNum CFP YFP particleID];
 % 1. Time
 % 2. lengthVals
 % 3. isDrop
@@ -141,5 +147,6 @@ dm = [Time lengthVals isDrop widthVals vaVals surfaceArea x_pos y_pos orig_frame
 % 12. trackNum  =  total track number (vs ID which is xy based)
 % 13. CFP
 % 14. YFP
+% 15. particleID
 
 end
