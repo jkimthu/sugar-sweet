@@ -12,9 +12,9 @@
 
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
-% last update: Jen, 2019 January 22
-% commit: now the less streamlined version of analysis, with testing and figures at many stages,
-%         not specific to windows
+% last update: Jen, 2019 January 23
+% commit: add sections to calculate mean YFP and CFP with reduced frequency
+%         dataset for threshold determination
 
 
 % ok let's go!
@@ -47,7 +47,7 @@ xy_final = 2; % total num of xy positions in analysis
 num_tpt = 241; % total num of timepoints in analysis
 
 
-%% 1. particle identification, characterization and tracking
+% 1. particle identification, characterization and tracking
 %
 %  Strategy:
 %
@@ -120,7 +120,8 @@ figure(1); imshowpair(bw,bw_g,'montage'); title('step 1: edge detection');
 bw1 = edge(bg,'sobel');
 figure(2); imshow(bw1); title('edge, smoothed')
 
-%%
+%% comparing edge detection methods
+
 bw1 = edge(bw_g,'sobel');
 
 bw2 = edge(bw_g,'Prewitt');
@@ -131,7 +132,9 @@ bw3 = bw1+bw2;
 figure(3); imshow(bw3)
 
 bw = bw1;
-%%
+
+%% adjusting edge detection for fullness
+
 % clean up edge detection
 se = strel('disk',1); 
 %se = strel('disk',3); % structuring element; disk-shaped with radius of 3 pixels
@@ -143,9 +146,10 @@ figure(4); imshow(bw_fill); title('step 3: fill');
 
 bw_final = imerode(imerode(bw_fill,se),se); % erode twice to smooth; this is your final mask
 figure(5);  imshow(bw_final); title('step 4: erode or smooth');
-%%
+
 figure(6); imshowpair(imadjust(ph_image),bw_final); title('final mask-phase overlay');
-%%
+
+%% cool cherry trick: linking subplots
 % visualize effect of each step of edge detection and cleanup
 figure;
 ax(1) = subplot(231); imshowpair(imadjust(ph_image),bw_final); title('final mask-phase overlay');
@@ -155,7 +159,7 @@ ax(4) = subplot(234); imshow(bw_fill); title('step 3: fill');
 ax(5) = subplot(235); imshow(bw_final); title('step 4: erode or smooth');
 linkaxes(ax(:),'xy'); % link subplots so that you can zoom-in on all subplots simultaneously
 
-%% continue test analysis
+%% segmentation and particle property measurements
 
 % segment cells
 cc = bwconncomp(bw_final);
@@ -172,67 +176,34 @@ figure; histogram(area_conv)
 xlabel('Area (sq microns)')
 ylabel('Count')
 
-%% continue test analysis
+%% measuring fluorescence signal from phase mask overlays
+
 % 2. determine which cells are YFP or CFP labeled
 % overlay mask with YFP fluorescence image by dot-product
 y_mask_overlay = bw_final .* double(y_image); % convert your uint16 image to double class
 c_mask_overlay = bw_final .* double(c_image);
 
 % compute the fluorescence intensity value for each cell
-for cell = 1:cc.NumObjects
+for c = 1:cc.NumObjects
     
     pixel_id_of_cell = []; % initialize
-    pixel_id_of_cell = cc.PixelIdxList{cell}; % pixel index where the cell of interest is
+    pixel_id_of_cell = cc.PixelIdxList{c}; % pixel index where the cell of interest is
     
-    y_fluo_int_cells(cell) = mean(y_mask_overlay(pixel_id_of_cell)); % compute the mean intensity of pixels in the cell
-    c_fluo_int_cells(cell) = mean(c_mask_overlay(pixel_id_of_cell));
+    y_fluo_int_cells(c) = mean(y_mask_overlay(pixel_id_of_cell)); % compute the mean intensity of pixels in the cell
+    c_fluo_int_cells(c) = mean(c_mask_overlay(pixel_id_of_cell));
+    
+
+    % assign mean fluorescence intensity to cell
+    stats(c).yfp = y_fluo_int_cells(c); % yfp
+    stats(c).cfp = c_fluo_int_cells(c); % cfp
     
 end
-
 
 % look at the distribution of YFP intensities of cells to determine a threshold
 figure; histogram(y_fluo_int_cells,50); title('yfp'); xlabel('mean intensity')
 figure; histogram(c_fluo_int_cells,50); title('cfp'); xlabel('mean intensity')
 
-%% continue test analysis
-
-% from the histogram above, it seems like a threshold of around 100 might work
-threshold_yfp = 101;
-threshold_cfp = 103;
-
-% let's see how good the threshold is!
-% in this for-loop, you will
-% 1) erase the masks of YFP-negative cells
-% 2) output the cell ID numbers of YFP-positive cells
-
-bw_final_y = bw_final; % initialize
-bw_final_c = bw_final; % initialize
-
-for cell = 1:cc.NumObjects
-    
-    % yfp
-    if y_fluo_int_cells(cell) < threshold_yfp
-        bw_final_y(cc.PixelIdxList{cell}) = 0;   % erase the YFP-negative cells
-        stats(cell).yfp = 0;
-    else
-        stats(cell).yfp = 1;
-    end
-    
-    % cfp
-    if c_fluo_int_cells(cell) < threshold_cfp
-        bw_final_c(cc.PixelIdxList{cell}) = 0;    % erase the CFP-negative cells
-        stats(cell).cfp = 0;
-    else
-        stats(cell).cfp = 1;
-    end
-    
-end
-
-% let's see if the threshold worked
-figure; imshowpair(bw_final_y,imadjust(y_image)); title('after thresholding, remaining YFP masks')
-figure; imshowpair(bw_final_c,imadjust(c_image)); title('after thresholding, remaining CFP masks')
-
-%% continue test analysis
+%% compiling data structure
 
 % add YFP or CFP designation to data structure
 %           0 = not above threshold,
@@ -291,6 +262,10 @@ p_unit.Angle = angle;
 
 
 p_clone(tpt) = p_unit;
+
+
+
+
 
 %% TWO. FULL ANALYSIS
 
@@ -872,6 +847,387 @@ save(strcat('glycogen-',experiment,'-width1p4-jiggle-0p5.mat'), 'D', 'D2', 'D3',
 disp('Quality control: complete!')
 
 
+%% YFP and CFP thresholds: my constructed method, from observations of reduced freq xy02 data
+
+clc
+clear
+
+% 0. initialize data
+xy = 2;
+date = '2018-11-23';
+cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02'))
+load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
+
+
+% 0 . initialize image frequency
+selected_tpt = linspace(1,241,17);
+
+
+% 0. initialize visually scored (+) and (-) fluor signal particle IDs
+
+% from image 9 in xy02 reduced frequency dataset
+yfp_plus_9 = [25,28,27,7,18,13,3,1,24,31,42,21,31,9,2,40,35,45,28,33,29,26,32]; % yfp+ cells 
+yfp_neg_9 = [36,20,15,4,14,23,16,39,37,30,6,10,19,22,34,5]; % yfp- cells
+yfp_maybes_9 = [46,11,8,47,44,12,43,41]; % ambiguous yfp signal (very light signal)
+
+cfp_plus_9 = 4;
+
+
+% from image 17 in xy02 reduced frequency dataset
+yfp_plus_17 = [24,25,27,18,13,7,3,1,31,21,17,9,40,35,28,33,29,26,32];
+yfp_neg_17 = [39,38,20,15,4,14,23,16,37,30,6,2,10,19,22,5];
+yfp_maybes_17 = [11,8,12,41];
+
+cfp_plus_17 = 4;
+
+
+% double-check data entry
+
+% 1. should not have co-occuring particles between sets of same fluorophore
+check1 = intersect(yfp_plus_17,yfp_neg_17);
+check2 = intersect(yfp_plus_17,yfp_maybes_17);
+check3 = intersect(yfp_neg_17,yfp_maybes_17);
+
+% 2. should not have co-occuring particles between fluorophores
+check4 = intersect(yfp_plus_17,cfp_plus_17);
+check5 = intersect(yfp_maybes_17,cfp_plus_17);
+
+% 3. SHOULD have co-occurrence between yfp- and cfp+, represeting 100% of cfp+
+check6 = intersect(yfp_neg_17,cfp_plus_17);
+check7 = cfp_plus_17 == check6;
+
+% 4. report: if checks fail, throw error message
+check_summary = check1 + check2 + check3 + check4 + check5 + check6;
+if isempty(check_summary) == 0
+    error('checkpoint failure! double-check fluorescent subsets')
+elseif check7 == 0
+    error('checkpoint alert! not all CFP+ cells are YFP-')
+else
+    disp('-  quality report: fluorescent data checkpoints passed!')
+    clear check1 check2 check3 check4 check5 check6 check7 check_summary
+end
+
+
+
+% 1. compile experiment data matrix
+dt_min = 2;
+xy_start = xy;
+xy_end = xy;
+xyData = buildDM_glycogen(D5, xy_start, xy_end,dt_min);
+clear xy_start xy_end
+
+
+
+% 2. gather fluorescence intensities for all particle sets
+
+%% YFP-based particle sets, image 9
+
+clear meanYFP meanCFP stdYFP stdCFP yInt cInt image_interest frame dm_image
+clear int_yfp int_cfp cfp_neg plus neg maybes idx_plus idx_neg idx_maybes
+clc
+
+% 1. isolate image9 data
+image_interest = 9;
+frame = xyData(:,9);        % col 9 = frame number in buildDM_glycogen
+dm_image = xyData(frame == image_interest,:);
+
+
+% 2. for all particles in yfp+, gather yfp and cfp intensities
+int_yfp = dm_image(:,14);    % col 14 = mean yfp intensity
+int_cfp = dm_image(:,13);    % col 13 = mean cfp intensity
+
+
+% 3. identify indeces of each particle
+particleID = dm_image(:,15);  % col 15 = particle ID from tracking
+indeces = zeros(length(particleID),1);
+concat_cfp = [yfp_plus_9'; yfp_neg_9'; yfp_maybes_9'];
+for i = 1:length(indeces)
+    idx = find(particleID == concat_cfp(i));
+    indeces(i) = idx;
+end
+clear i idx
+
+
+% 4. resort indeces into cell sets
+plus = length(yfp_plus_9);
+neg = length(yfp_neg_9);
+
+idx_plus = indeces(1:plus);
+idx_neg = indeces(plus+1:plus+neg);
+idx_maybes = indeces(plus+neg+1:end);
+
+
+% 5. isolate intensity based on cell set
+yInt{1} = int_yfp(idx_plus);
+yInt{2} = int_yfp(idx_neg);
+yInt{3} = int_yfp(idx_maybes);
+
+cInt{1} = int_cfp(idx_plus);
+cInt{2} = int_cfp(idx_neg);
+cInt{3} = int_cfp(idx_maybes);
+
+
+% 6. calculate mean and standard devation of cell intensity
+meanYFP = cellfun(@mean,yInt);
+meanCFP = cellfun(@mean,cInt);
+stdYFP = cellfun(@std,yInt);
+stdCFP = cellfun(@std,cInt);
+
+
+% 7. plot
+figure(1)
+bar(meanYFP)
+hold on
+errorbar(1:3,meanYFP,stdYFP,'.')
+ylim([95 130])
+ylabel('Mean YFP Intensity')
+title('YFP signal in in YFP-based cell sets, xy02 reduced freq image 9')
+%xticklabels({'YFP+','YFP-','YFP maybes'}) % when updating matlab versions
+
+% CFP signal intensity from YFP-based sets
+figure(2)
+bar(meanCFP)
+hold on
+errorbar(1:3,meanCFP,stdCFP,'.')
+ylim([95 130])
+ylabel('Mean CFP Intensity')
+title('CFP signal in YFP-based cell sets, in xy02 reduced freq image 9')
+
+%% CFP-based particle sets, image 9
+
+clear meanYFP meanCFP stdYFP stdCFP yInt cInt image_interest frame dm_image
+clear int_yfp int_cfp cfp_neg plus neg maybes idx_plus idx_neg idx_maybes
+clc
+
+% 1. isolate image data
+image_interest = 9;
+frame = xyData(:,9);        % col 9 = frame number in buildDM_glycogen
+dm_image = xyData(frame == image_interest,:);
+
+
+% 2. for all particles in yfp+, gather yfp and cfp intensities
+int_yfp = dm_image(:,14);    % col 14 = mean yfp intensity
+int_cfp = dm_image(:,13);    % col 13 = mean cfp intensity
+
+
+% 3. determine CFP- cells based on CFP+
+particleIDs = dm_image(:,12);    % col 12 = track number, which for single xy dm is also ID
+cfp_neg = particleIDs;
+cfp_neg(cfp_plus_9) = [];
+
+
+% 4. identify indeces of each particle
+particleID = dm_image(:,15);  % col 15 = particle ID from tracking
+indeces = zeros(length(particleID),1);
+concat_cfp = [cfp_plus_9'; cfp_neg];
+for i = 1:length(indeces)
+    idx = find(particleID == concat_cfp(i));
+    indeces(i) = idx;
+end
+clear i idx
+
+
+% 5. resort indeces into cell sets
+plus = length(cfp_plus_9);
+neg = length(cfp_neg);
+
+idx_plus = indeces(1:plus);
+idx_neg = indeces(plus+1:plus+neg);
+
+
+% 6. isolate intensity based on cell set
+yInt{1} = int_yfp(idx_plus);
+yInt{2} = int_yfp(idx_neg);
+
+cInt{1} = int_cfp(idx_plus);
+cInt{2} = int_cfp(idx_neg);
+
+
+% 7. calculate mean and standard deviation of cell intensity
+meanYFP = cellfun(@mean,yInt);
+meanCFP = cellfun(@mean,cInt);
+stdYFP = cellfun(@std,yInt);
+stdCFP = cellfun(@std,cInt);
+
+
+% 8. plot
+figure(3)
+bar(meanYFP)
+hold on
+errorbar(1:2,meanYFP,stdYFP,'.')
+ylim([95 130])
+ylabel('Mean YFP Intensity')
+title('YFP signal in cfp-based cells, xy02 reduced freq image 9')
+
+figure(4)
+bar(meanCFP)
+hold on
+errorbar(1:2,meanCFP,stdCFP,'.')
+ylim([95 130])
+ylabel('Mean YFP Intensity')
+title('CFP signal in cfp-based cells, xy02 reduced freq image 9')
+
+%% YFP-based particle sets, image 17
+
+clear meanYFP meanCFP stdYFP stdCFP yInt cInt image_interest frame dm_image
+clear int_yfp int_cfp cfp_neg plus neg maybes idx_plus idx_neg idx_maybes
+clc
+
+
+% 1. isolate image data
+image_interest = 17;
+frame = xyData(:,9);        % col 9 = frame number in buildDM_glycogen
+dm_image = xyData(frame == image_interest,:);
+
+
+% 2. for all particles in yfp+, gather yfp and cfp intensities
+int_yfp = dm_image(:,14);    % col 14 = mean yfp intensity
+int_cfp = dm_image(:,13);    % col 13 = mean cfp intensity
+
+
+% 3. identify indeces of each particle
+particleID = dm_image(:,15);  % col 15 = particle ID from tracking
+indeces = zeros(length(particleID),1);
+concat_cfp = [yfp_plus_17'; yfp_neg_17'; yfp_maybes_17'];
+for i = 1:length(indeces)
+    idx = find(particleID == concat_cfp(i));
+    indeces(i) = idx;
+end
+clear i idx
+
+
+% 4. resort indeces into cell sets
+plus = length(yfp_plus_17);
+neg = length(yfp_neg_17);
+
+idx_plus = indeces(1:plus);
+idx_neg = indeces(plus+1:plus+neg);
+idx_maybes = indeces(plus+neg+1:end);
+
+
+% 5. isolate intensity based on cell set
+yInt{1} = int_yfp(idx_plus);
+yInt{2} = int_yfp(idx_neg);
+yInt{3} = int_yfp(idx_maybes);
+
+cInt{1} = int_cfp(idx_plus);
+cInt{2} = int_cfp(idx_neg);
+cInt{3} = int_cfp(idx_maybes);
+
+
+% 6. calculate mean and standard devation of cell intensity
+meanYFP = cellfun(@mean,yInt);
+meanCFP = cellfun(@mean,cInt);
+stdYFP = cellfun(@std,yInt);
+stdCFP = cellfun(@std,cInt);
+
+
+% 7. plot
+figure(5) 
+bar(meanYFP)
+hold on
+errorbar(1:3,meanYFP,stdYFP,'.')
+ylim([95 130])
+ylabel('Mean YFP Intensity')
+title('YFP signal in YFP-based cell sets, xy02 reduced freq image 17')
+%xticklabels({'YFP+','YFP-','YFP maybes'}) % when updating matlab versions
+
+figure(6)
+bar(meanCFP)
+hold on
+errorbar(1:3,meanCFP,stdCFP,'.')
+ylim([95 130])
+ylabel('Mean CFP Intensity')
+title('CFP signal in YFP-based cell sets, xy02 reduced freq image 17')
+
+%% CFP-based particle sets, image 17
+
+clear meanYFP meanCFP stdYFP stdCFP yInt cInt image_interest frame dm_image
+clear int_yfp int_cfp cfp_neg plus neg maybes idx_plus idx_neg idx_maybes
+clc
+
+
+% 1. isolate image data
+image_interest = 17;
+frame = xyData(:,9);        % col 9 = frame number in buildDM_glycogen
+dm_image = xyData(frame == image_interest,:);
+
+
+% 2. for all particles in yfp+, gather yfp and cfp intensities
+int_yfp = dm_image(:,14);    % col 14 = mean yfp intensity
+int_cfp = dm_image(:,13);    % col 13 = mean cfp intensity
+
+
+% 3. determine CFP- cells based on CFP+
+particleIDs = dm_image(:,12);    % col 12 = track number, which for single xy dm is also ID
+cfp_neg = particleIDs;
+cfp_neg(cfp_plus_17) = [];
+
+
+% 4. identify indeces of each particle
+particleID = dm_image(:,15);  % col 15 = particle ID from tracking
+indeces = zeros(length(particleID),1);
+
+concat_cfp = [cfp_plus_17'; cfp_neg];
+for i = 1:length(indeces)
+    idx = find(particleID == concat_cfp(i));
+    indeces(i) = idx;
+end
+clear i idx
+
+
+% 5. resort indeces into cell sets
+plus = length(cfp_plus_17);
+neg = length(cfp_neg);
+
+idx_plus = indeces(1:plus);
+idx_neg = indeces(plus+1:plus+neg);
+
+
+
+% 6. isolate intensity based on cell set
+yInt{1} = int_yfp(idx_plus);
+yInt{2} = int_yfp(idx_neg);
+
+cInt{1} = int_cfp(idx_plus);
+cInt{2} = int_cfp(idx_neg);
+
+
+% 7. calculate mean and standard deviation of cell intensity
+meanYFP = cellfun(@mean,yInt);
+meanCFP = cellfun(@mean,cInt);
+stdYFP = cellfun(@std,yInt);
+stdCFP = cellfun(@std,cInt);
+
+
+% 8. plot
+figure(7)
+bar(meanYFP)
+hold on
+errorbar(1:2,meanYFP,stdYFP,'.')
+ylim([95 130])
+ylabel('Mean YFP Intensity')
+title('YFP signal in cfp-based cells, xy02 reduced freq image 9')
+
+figure(8)
+bar(meanCFP)
+hold on
+errorbar(1:2,meanCFP,stdCFP,'.')
+ylim([95 130])
+ylabel('Mean YFP Intensity')
+title('CFP signal in cfp-based cells, xy02 reduced freq image 9')
+
+%% save figures
+
+for f = 1:8
+    figure(f)
+    plotName = strcat('bar-figure',num2str(f));
+    saveas(gcf,plotName,'epsc')
+    close(gcf)
+end
+
+
+
 %% 3. compute population growth rates between YFP and CFP populations
 
 clear
@@ -1000,4 +1356,10 @@ xlabel('Time (hr)')
 ylabel('Growth rate')
 title(strcat(date,': (',specificGrowthRate,')'))
 legend('YFP mutant', 'CFP WT')
+
+
+
+
+
+
 
