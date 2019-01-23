@@ -13,8 +13,7 @@
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
 % last update: Jen, 2019 January 23
-% commit: add sections to calculate mean YFP and CFP with reduced frequency
-%         dataset for threshold determination
+% commit: edit figure titles for clarity
 
 
 % ok let's go!
@@ -1064,7 +1063,7 @@ bar(meanCFP)
 hold on
 errorbar(1:2,meanCFP,stdCFP,'.')
 ylim([95 130])
-ylabel('Mean YFP Intensity')
+ylabel('Mean CFP Intensity')
 title('CFP signal in cfp-based cells, xy02 reduced freq image 9')
 
 %% YFP-based particle sets, image 17
@@ -1207,15 +1206,15 @@ hold on
 errorbar(1:2,meanYFP,stdYFP,'.')
 ylim([95 130])
 ylabel('Mean YFP Intensity')
-title('YFP signal in cfp-based cells, xy02 reduced freq image 9')
+title('YFP signal in cfp-based cells, xy02 reduced freq image 17')
 
 figure(8)
 bar(meanCFP)
 hold on
 errorbar(1:2,meanCFP,stdCFP,'.')
 ylim([95 130])
-ylabel('Mean YFP Intensity')
-title('CFP signal in cfp-based cells, xy02 reduced freq image 9')
+ylabel('Mean CFP Intensity')
+title('CFP signal in cfp-based cells, xy02 reduced freq image 17')
 
 %% save figures
 
