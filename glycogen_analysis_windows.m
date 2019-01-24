@@ -12,9 +12,8 @@
 
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
-% last update: Jen, 2019 January 23
-% commit: successful splitting of populations by threshold of 103.4
-
+% last update: Jen, 2019 January 24
+% commit: successful visualization of growth in YFP but not in CFP with area
 
 % ok let's go!
 
@@ -1264,7 +1263,7 @@ glycogen_data = buildDM_glycogen(D5, xy_start, xy_end, dt_min);
 clear xy_start xy_end
 
 
-% 2. isolate volume (Va), drop, track number, and fluorescent label data
+% 2. isolate volume (Va), drop, and track number for growth rate calculations
 volumes = glycogen_data(:,5);        % col 4 = calculated va_vals (cubic um)
 isDrop = glycogen_data(:,3);         % col 2 = isDrop, 1 marks a birth event
 trackNum = glycogen_data(:,12);      % col 12 = track number (not ID from particle tracking)
@@ -1409,6 +1408,169 @@ title(strcat(date,': (',specificGrowthRate,')'))
 legend('YFP WT', 'CFP mutant')
 
 
+
+
+%% 4. compute population growth rates as change in total area
+
+clear
+clc
+
+% 0. initialize data
+%xy = 2;
+xy_start = 1;
+xy_end = 16;
+dt_min = 2;
+%dt_min = 30; % reduced frequency dataset
+
+date = '2018-11-23';
+%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02'))
+%load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
+cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
+load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
+
+
+% 0. define time binning parameters
+specificBinning = 30; % in minutes
+binsPerHour = 60/specificBinning;
+
+
+% 0. define fluorescence intensity threshold
+threshold = 103.4;
+
+
+% 1. assemble data matrix
+glycogen_data = buildDM_glycogen(D5, xy_start, xy_end, dt_min);
+clear xy_start xy_end
+
+
+% 2. truncate data to non-erroneous (e.g. bubbles) timestamps
+maxTime = 8; % in hours
+frame = glycogen_data(:,9);      % col 9 = frame in image sequence
+dt_sec = dt_min * 60;
+timeInSeconds = frame * dt_sec;  % frame = is consequetive images in analysis
+timeInHours = timeInSeconds/3600;
+
+if maxTime > 0
+    glycogenData_bubbleTrimmed = glycogen_data(timeInHours <= maxTime,:);
+else
+    glycogenData_bubbleTrimmed = glycogen_data;
+end
+clear maxTime frame timeInSeconds timeInHours
+
+
+
+% 3. bin growth rate into time bins based on timestamp
+frame = glycogenData_bubbleTrimmed(:,9);      % col 9 = frame in image sequence
+timeInSeconds = frame * dt_sec;
+timeInHours = timeInSeconds/3600;
+bins = ceil(timeInHours*binsPerHour);
+clear timeInSeconds frame
+
+
+
+% 4. isolate YFP and CFP intensities, area and time
+cfp = glycogenData_bubbleTrimmed(:,13);         % col 13 = mean CFP intensity
+yfp = glycogenData_bubbleTrimmed(:,14);         % col 14 = mean YFP intensity
+area = glycogenData_bubbleTrimmed(:,6);         % col 6 = measured surface area
+
+
+
+% 5. convert intensities to (+) or (-) fluorophore
+isCFP = cfp > threshold;
+isYFP = yfp > threshold;
+
+
+
+% 6. test threshold, throw error if any points are identified as both
+isBoth = isCFP+isYFP;
+if sum(isBoth == 2) > 0
+    error('threshold fail! some cells positive for both fluorophores')
+end
+
+% this step doesn't matter as long as threshold doesn't allow double-positives
+glycogenData_final = glycogenData_bubbleTrimmed(isBoth < 2,:);
+bins_final = bins(isBoth < 2);
+isYFP_final = isYFP(isBoth < 2);
+isCFP_final = isCFP(isBoth < 2);
+area_final = area(isBoth < 2);
+
+
+% 7. separate area by fluorophore
+trackNum = glycogenData_final(:,12); % col 12 = track num
+IDs_yfp = unique(trackNum(isYFP_final == 1));
+IDs_cfp = unique(trackNum(isCFP_final == 1));
+
+IDs_labeled = [IDs_yfp; IDs_cfp];
+
+area_yfp = [];
+area_cfp = [];
+time_yfp = [];
+time_cfp = [];
+for id = 1:length(IDs_labeled)
+    
+    currentID = IDs_labeled(id);
+    currentSA = area_final(trackNum == currentID);
+    currentTime = bins_final(trackNum == currentID);
+    
+    if ismember(currentID,IDs_yfp) == 1 % if ID belongs to YFP+
+        area_yfp = [area_yfp; currentSA];
+        time_yfp = [time_yfp; currentTime];
+    else % else
+        area_cfp = [area_cfp; currentSA];
+        time_cfp = [time_cfp; currentTime];
+    end
+    
+end
+clear currentID currentSA currentTime
+
+
+% 8. bin growth rate by time
+binned_yfp = accumarray(time_yfp,area_yfp,[],@(x) {x});
+binned_cfp = accumarray(time_cfp,area_cfp,[],@(x) {x});
+
+
+% 9. calculate mean, standard dev, counts, and standard error
+y_bin_means = cellfun(@mean,binned_yfp);
+y_bin_sums = cellfun(@sum,binned_yfp);
+y_bin_stds = cellfun(@std,binned_yfp);
+y_bin_counts = cellfun(@length,binned_yfp);
+y_bin_sems = y_bin_stds./sqrt(y_bin_counts);
+
+c_bin_means = cellfun(@mean,binned_cfp);
+c_bin_sums = cellfun(@sum,binned_cfp);
+c_bin_stds = cellfun(@std,binned_cfp);
+c_bin_counts = cellfun(@length,binned_cfp);
+c_bin_sems = c_bin_stds./sqrt(c_bin_counts);
+
+
+% 10. normalize sums by counts
+y_norm = y_bin_sums./y_bin_counts;
+c_norm = c_bin_sums./c_bin_counts;
+
+
+% 11. normalize by initial sum
+y_norm2 = y_norm/y_norm(1);
+c_norm2 = c_norm/c_norm(1);
+
+
+% plot growth rate over time
+palette = {'DodgerBlue','GoldenRod'};
+
+yfp_color = rgb(palette(2));
+cfp_color = rgb(palette(1));
+xmark = 'o';
+
+figure(1)
+plot((1:length(y_norm2))/binsPerHour,y_norm2,'Color',yfp_color)
+hold on
+plot((1:length(c_norm2))/binsPerHour,c_norm2,'Color',cfp_color)
+hold on
+grid on
+axis([0,8.5,.9,1.2])
+xlabel('Time (hr)')
+ylabel('Area per cell / initial')
+title(strcat(date,': growth in total area'))
+legend('YFP WT', 'CFP mutant')
 
 
 
