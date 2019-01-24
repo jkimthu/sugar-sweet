@@ -16,9 +16,8 @@
 %     7. woohoo!
 
 
-% last edit: jen, 2019 January 22
-% commit: phase tracking of full130 dataset, xy02, and add dt_min for new buildDM_glycogen
-
+% last edit: jen, 2019 January 23
+% commit: phase tracking of allXYs dataset, xy02, with YFP and CFP colored
 % OK LEZ GO!
 
 %% A. Initialize experiment data
@@ -27,16 +26,19 @@ clc
 clear
 
 
-
 % 0. initialize data
 date = '2018-11-23';
 %cd(strcat('D:\',date))
-load(strcat('glycogen-',date,'-full130-jiggle-0p5.mat'),'D5');
+load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
-%%
 % 0. initialize channel and xy movie to analyze
 channel = 'c1';  % phase = c1; c2 = CFP; c3 = YFP)
 
+% 0. initialize threshold intensity value
+threshold = 103.4; % determined to not ID both fluorophores in a single cell
+
+%%
+% 0. initiate loop through movies of interest
 for xy = 2
     
     if xy >= 10
@@ -83,7 +85,7 @@ for xy = 2
         % i. initialize current image
         cla
         I=imread(names{img});
-        filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-frame',num2str(img),'.tif');
+        filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-phase-frame',num2str(img),'.tif');
         
         figure(1)
         imshow(I, 'DisplayRange',[100 150]); % 2018-11-23
@@ -100,9 +102,8 @@ for xy = 2
             % iii. else when tracked lineages are present, isolate data for each image
             dm_currentImage = xyData(xyData(:,9) == img,:);    % col 9 = frame #
             
-            isCFP = dm_currentImage(:,13);          % col 13 = CFP (above threshold? yes/no)
-            isYFP = dm_currentImage(:,14);          % col 14 = YFP (above threshold? yes/no)
-            signalSum = isCFP + isYFP;
+            isCFP = dm_currentImage(:,13) > threshold;          % col 13 = CFP (above threshold? yes/no)
+            isYFP = dm_currentImage(:,14) > threshold;          % col 14 = YFP (above threshold? yes/no)
             
             majorAxes = dm_currentImage(:,2);       % col 2 = lengths
             minorAxes = dm_currentImage(:,4);       % col 4 = widths
@@ -122,8 +123,14 @@ for xy = 2
                 [x_rotated, y_rotated] = drawEllipse(particle,majorAxes, minorAxes, centroid_X, centroid_Y, angles, conversionFactor);
                 lineVal = 0.5;
                 
-
-                color = rgb('SeaGreen');
+                % color ellipse based on fluorescent signal
+                if isYFP(particle) == 1
+                color = rgb('GoldenRod');
+                elseif isCFP(particle) == 1
+                    color = rgb('Cyan');
+                else
+                    color = rgb('Indigo');
+                end
   
                 
                 hold on
