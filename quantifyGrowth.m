@@ -9,11 +9,12 @@
 %
 %           section 1. instantaneous rate of volumetric doubling
 %           section 2. total area occupied, normalized per cell and initial value
+%           section 3. dA/dt, where A is normalized by the number of cells
 %           - for specifics, see strategy at the start of each section
 
 
 % last update: Jen, 2019 Jan 25
-% commit: first commit, born from glycogen_analysis_scrap_pile
+% commit: add section to calculate and plot dA/dt
 
 % ok let's go!
 
@@ -399,3 +400,184 @@ ylabel('Area per cell / initial')
 title(strcat(date,': growth in total area'))
 legend('YFP WT', 'CFP mutant')
 
+
+%% section 3. dA/dt, where A is normalized by the number of cells
+
+
+% Strategy:
+%                0. initialize experiment parameters and data
+%                1. assemble data matrix
+%                2. truncate data to non-erroneous timestamps (e.g. avoid bubbles) 
+%                3. bin growth rate into time bins based on timestamp
+%                4. isolate YFP and CFP intensities and area
+%                5. convert intensities to (+) or (-) fluorophore
+%                       - for details on threshold determination,
+%                         see scrap_pile section "YFP and CFP thresholds"
+%                6. test threshold, throw error if any data points ID as both
+%                7. separate area by fluorophore
+%                8. bin area by time
+%                9. calculate stats for each bin, including summed area
+%               10. normalize sums by cell counts
+%               11. calculate change in area per cell per timestep
+%               12. plot growth rate over time
+
+
+clear
+clc
+
+% 0. initialize data
+%xy = 2;
+xy_start = 1;
+xy_end = 16;
+dt_min = 2;
+%dt_min = 30; % reduced frequency dataset
+
+date = '2018-11-23';
+%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02'))
+%load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
+cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
+load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
+
+
+% 0. define time binning parameters
+specificBinning = 2; % in minutes
+binsPerHour = 60/specificBinning;
+
+
+% 0. define fluorescence intensity threshold
+threshold = 103.4;
+
+
+% 1. assemble data matrix
+glycogen_data = buildDM_glycogen(D5, xy_start, xy_end, dt_min);
+clear xy_start xy_end
+
+
+% 2. truncate data to non-erroneous timestamps (e.g. bubbles) 
+maxTime = 8; % in hours
+frame = glycogen_data(:,9);      % col 9 = frame in image sequence
+dt_sec = dt_min * 60;
+timeInSeconds = frame * dt_sec;  % frame = is consequetive images in analysis
+timeInHours = timeInSeconds/3600;
+
+if maxTime > 0
+    glycogenData_bubbleTrimmed = glycogen_data(timeInHours <= maxTime,:);
+else
+    glycogenData_bubbleTrimmed = glycogen_data;
+end
+clear maxTime frame timeInSeconds timeInHours
+
+
+
+% 3. bin growth rate into time bins based on timestamp
+frame = glycogenData_bubbleTrimmed(:,9);      % col 9 = frame in image sequence
+timeInSeconds = frame * dt_sec;
+timeInHours = timeInSeconds/3600;
+bins = ceil(timeInHours*binsPerHour);
+clear timeInSeconds frame
+
+
+
+% 4. isolate YFP and CFP intensities and area
+cfp = glycogenData_bubbleTrimmed(:,13);         % col 13 = mean CFP intensity
+yfp = glycogenData_bubbleTrimmed(:,14);         % col 14 = mean YFP intensity
+area = glycogenData_bubbleTrimmed(:,6);         % col 6 = measured surface area
+
+
+
+% 5. convert intensities to (+) or (-) fluorophore
+isCFP = cfp > threshold;
+isYFP = yfp > threshold;
+
+
+
+% 6. test threshold, throw error if any data points ID as both
+isBoth = isCFP+isYFP;
+if sum(isBoth == 2) > 0
+    error('threshold fail! some cells positive for both fluorophores')
+end
+
+% this step doesn't matter as long as threshold doesn't allow double-positives
+glycogenData_final = glycogenData_bubbleTrimmed(isBoth < 2,:);
+bins_final = bins(isBoth < 2);
+isYFP_final = isYFP(isBoth < 2);
+isCFP_final = isCFP(isBoth < 2);
+area_final = area(isBoth < 2);
+
+
+% 7. separate area by fluorophore
+trackNum = glycogenData_final(:,12); % col 12 = track num
+IDs_yfp = unique(trackNum(isYFP_final == 1));
+IDs_cfp = unique(trackNum(isCFP_final == 1));
+
+IDs_labeled = [IDs_yfp; IDs_cfp];
+
+area_yfp = [];
+area_cfp = [];
+time_yfp = [];
+time_cfp = [];
+for id = 1:length(IDs_labeled)
+    
+    currentID = IDs_labeled(id);
+    currentSA = area_final(trackNum == currentID);
+    currentTime = bins_final(trackNum == currentID);
+    
+    if ismember(currentID,IDs_yfp) == 1 % if ID belongs to YFP+
+        area_yfp = [area_yfp; currentSA];
+        time_yfp = [time_yfp; currentTime];
+    else % else
+        area_cfp = [area_cfp; currentSA];
+        time_cfp = [time_cfp; currentTime];
+    end
+    
+end
+clear currentID currentSA currentTime
+
+
+% 8. bin area by time
+binned_yfp = accumarray(time_yfp,area_yfp,[],@(x) {x});
+binned_cfp = accumarray(time_cfp,area_cfp,[],@(x) {x});
+
+
+% 9. calculate mean, standard dev, counts, and standard error
+y_bin_means = cellfun(@mean,binned_yfp);
+y_bin_sums = cellfun(@sum,binned_yfp);
+y_bin_stds = cellfun(@std,binned_yfp);
+y_bin_counts = cellfun(@length,binned_yfp);
+y_bin_sems = y_bin_stds./sqrt(y_bin_counts);
+
+c_bin_means = cellfun(@mean,binned_cfp);
+c_bin_sums = cellfun(@sum,binned_cfp);
+c_bin_stds = cellfun(@std,binned_cfp);
+c_bin_counts = cellfun(@length,binned_cfp);
+c_bin_sems = c_bin_stds./sqrt(c_bin_counts);
+
+
+% 10. normalize sums by counts
+y_norm = y_bin_sums./y_bin_counts;
+c_norm = c_bin_sums./c_bin_counts;
+
+
+% 11. calculate change in area per cell per timestep
+y_dAdt = diff(y_norm)./dt_min;
+c_dAdt = diff(c_norm)./dt_min;
+
+
+% 12. plot growth rate over time
+palette = {'DodgerBlue','GoldenRod'};
+
+yfp_color = rgb(palette(2));
+cfp_color = rgb(palette(1));
+xmark = 'o';
+
+figure(1)
+plot((1:length(y_dAdt))/binsPerHour,y_dAdt,'Color',yfp_color)
+hold on
+plot((1:length(c_dAdt))/binsPerHour,c_dAdt,'Color',cfp_color)
+hold on
+grid on
+%axis([0,8.5,.9,1.2])
+xlabel('Time (hr)')
+ylabel('dA/dt')
+title(strcat(date,': change in area per cell over time'))
+legend('YFP WT', 'CFP mutant')
