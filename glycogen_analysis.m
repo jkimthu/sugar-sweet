@@ -1,22 +1,22 @@
-% Glycogen analysis
+% glycogen_analysis
 
-% Goal: determine growth rates of WT and glycogen breakdown mutants under a
-%       pusling MPG environment.
+% Goal: builds a dataset from particle tracking WT and glycogen breakdown
+%       mutants under a pulsing nutrient environment.
 %
-%       input data is a timelapse with three channels: phase, YFP and CFP
-%       stratgey:
+%       input data is a timelapse with three channels: phase, CFP and YFP
+
+
+% Stratgey:
 %                0. initialize experiment parameters
 %                1. particle identification, characterization and tracking
 %                2. quality control: clean dataset prior to growth rate calculations
-%                3. fun part! compute population growth rates between YFP and CFP populations
 
 
-% BIIIIG thank yous to Cherry Gao and Vicente Fernandez for the start-up help and tips!
+% Acknowledgements: Cherry Gao, Vicente Fernandez and Jeff Guasto!
 
 
-% last update: Jen, 2019 Jan 22
-% commit: edited particle tracking of full 2018-11-23
-
+% last update: Jen, 2019 Jan 25
+% commit: edit comments for sharing and clarity
 
 % ok let's go!
 
@@ -50,6 +50,7 @@ xy_final = 16; % total num of xy positions in analysis
 
 % initialize array of desired timepoints
 selected_tpt = linspace(1,241,241);
+
 
 %% 1. particle identification, characterization and tracking
 %
@@ -611,139 +612,5 @@ save(strcat('glycogen-',experiment,'-allXYs-jiggle-0p5.mat'), 'D', 'D2', 'D3', '
 disp('Quality control: complete!')
 
 
-%% 3. compute population growth rates between YFP and CFP populations
 
-clear 
-clc
-
-% define experiment of interest
-date = '2018-11-23';
-
-% define growth rates of interest
-specificGrowthRate = 'log2';
-
-% define time binning parameters
-specificBinning = 15; % 10 min time bins
-binsPerHour = 60/specificBinning;
-
-% load measured experiment data
-experimentFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02');
-cd(experimentFolder)
-filename = strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat');
-load(filename,'D5');
-
-
-% define timestep between frames in minutes
-dt = 30; % min
-
-
-% assemble data matrix from all xy positions
-xy_start = 2;
-xy_end = 2;
-glycogen_data = buildDM_glycogen(D5, xy_start, xy_end);
-
-
-% isolate volume (Va), drop, track number, and fluorescent label data
-volumes = glycogen_data(:,5);        % col 5 = calculated va_vals (cubic um)
-isDrop = glycogen_data(:,3);         % col 3 = isDrop, 1 marks a birth event
-trackNum = glycogen_data(:,12);      % col 12 = track number (not ID from particle tracking)
-CFP = glycogen_data(:,13);           % col 13 = mean CFP signal in particle
-YFP = glycogen_data(:,14);           % col 14 = mean YFP signal in particle
-
-
-
-% calculate growth rate
-dt_sec = dt*60; % imaging frequency in seconds (1800 sec = 30 min)
-growthRates = calculateGrowthRate_glycogen(volumes,isDrop,trackNum,dt_sec);
-
-
-
-% truncate data to non-erroneous (e.g. bubbles) timestamps
-maxTime = 8; % in hours
-frame = glycogen_data(:,8);      % col 8 = frame in image sequence
-%timeInSeconds = frame * 120;     % 2 min per frame
-timeInSeconds = frame * dt_sec;     % 30 min per frame
-timeInHours = timeInSeconds/3600;
-
-
-if maxTime > 0
-    glycogenData_bubbleTrimmed = glycogen_data(timeInHours <= maxTime,:);
-    growthRates_bubbleTrimmed = growthRates(timeInHours <= maxTime,:);
-else
-    glycogenData_bubbleTrimmed = glycogen_data;
-    growthRates_bubbleTrimmed = growthRates;
-end
-clear maxTime frame timeInSeconds timeInHours
-
-
-% bin growth rate into time bins based on timestamp
-frame = glycogenData_bubbleTrimmed(:,8);      % col 8 = frame in image sequence
-timeInSeconds = frame * dt_sec;     
-timeInHours = timeInSeconds/3600;
-bins = ceil(timeInHours*binsPerHour);
-
-
-% isolate selected specific growth rate and remove nans from data analysis
-specificColumn = 3;
-xmin = -0.5;
-xmax = 2.5;
-growthRate_log2 = growthRates_bubbleTrimmed(:,specificColumn);
-
-growthRt_noNaNs = growthRate_log2(~isnan(growthRate_log2),:);
-bins_noNaNs = bins(~isnan(growthRate_log2),:);
-isYFP_noNaNs = YFP(~isnan(growthRate_log2),:);
-isCFP_noNaNs = CFP(~isnan(growthRate_log2),:);
-
-
-% separate YFP and CFP populations
-isBoth = isYFP_noNaNs+isCFP_noNaNs;
-growthRt_final = growthRt_noNaNs(isBoth < 2);
-bins_final = bins_noNaNs(isBoth < 2);
-isYFP_final = isYFP_noNaNs(isBoth < 2);
-isCFP_final = isCFP_noNaNs(isBoth < 2);
-
-growthRt_yfp = growthRt_final(isYFP_final == 1);
-growthRt_cfp = growthRt_final(isCFP_final == 1);
-
-
-
-% bin growth rate by time
-bins_yfp = bins_final(isYFP_final == 1);
-bins_cfp = bins_final(isCFP_final == 1);
-
-binned_yfp = accumarray(bins_yfp,growthRt_yfp,[],@(x) {x});
-binned_cfp = accumarray(bins_cfp,growthRt_cfp,[],@(x) {x});
-
-
-% calculate mean, standard dev, counts, and standard error
-y_bin_means = cellfun(@mean,binned_yfp);
-y_bin_stds = cellfun(@std,binned_yfp);
-y_bin_counts = cellfun(@length,binned_yfp);
-y_bin_sems = y_bin_stds./sqrt(y_bin_counts);
-
-c_bin_means = cellfun(@mean,binned_cfp);
-c_bin_stds = cellfun(@std,binned_cfp);
-c_bin_counts = cellfun(@length,binned_cfp);
-c_bin_sems = c_bin_stds./sqrt(c_bin_counts);
-
-
-
-% plot growth rate over time
-palette = {'DodgerBlue','GoldenRod'};
-
-yfp_color = rgb(palette(2));
-cfp_color = rgb(palette(1));
-xmark = 'o';
-
-figure(1)
-errorbar((1:length(y_bin_means))/binsPerHour,y_bin_means,y_bin_sems,'Color',yfp_color)
-hold on
-errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_color)
-hold on
-grid on
-axis([0,max(timeInHours)+0.1,xmin,xmax])
-xlabel('Time (hr)')
-ylabel('Growth rate')
-title(strcat(date,': (',specificGrowthRate,')'))
-legend('YFP mutant', 'CFP WT')
 
