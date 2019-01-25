@@ -1,18 +1,28 @@
-% buildDM_glycogen (windows)
+% buildDM_glycogen
 
-% goal: build a data matrix of track parameters (each column) over time
-%       (rows) for all cells in a given xy position. option to specificy xy
-%       positions and streamline data concatenation.
 
-% adapted from original buildDM, but streamlined for glycogen proejct analysis
+% goal: build a data matrix of parameters (each column) over time
+%       (rows) for single-cell lineages in specified xy positions.
 
-% last updated: jen, 2019 January 23
 
-% commit: add particleID to data matrix
+% strategy:
+%              0. initialize
+%              1. loop through all movies (xy)
+%              2. collect parameters of interest for each track (single-cell data over time)
+%                       - see code section 0. for list of compiled parameters
+%              3. concatenate data vertically into a single vector for each
+%              4. output a single matrix with each parameter vector as a unique column
+
+
+% note: script adapted from original buildDM, but streamlined for glycogen project analysis
+
+
+% last updated: jen, 2019 January 25
+% commit: edit comments for sharing and clarity
 
 
 function [dm] = buildDM_glycogen(D5,xy_start,xy_end,dt)
-%% initialize all values
+%% 0. initialize all values
   
 tn_counter = 0;
 dropThreshold = -0.75; % consider greater negatives a division event
@@ -34,7 +44,7 @@ CFP = [];               % 13. CFP
 YFP = [];               % 14. YFP
 particleID = [];        % 15. particleID from tracking
 
-%% loop through all xy positions and all tracks for data concatenation
+%% 1. loop through all xy positions and all tracks for data concatenation
 
 for n = xy_start:xy_end % n = each inidividual xy position from experiment (movie)
     

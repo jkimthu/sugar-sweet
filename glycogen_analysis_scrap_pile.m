@@ -1,7 +1,8 @@
-% Glycogen analysis _ with figures and other tests
+% glycogen analysis scrap pile
 
-% Goal: determine growth rates of WT and glycogen breakdown mutants under a
-%       pusling MPG environment.
+% Goal: this file contains pieces of test code, used when debugging various
+%       elements of glycogen data analysis, which aims to determine growth
+%       rates of WT and glycogen breakdown mutants under a pulsling nutrient environment.
 %
 %       input data is a timelapse with three channels: phase, YFP and CFP
 %       stratgey:
@@ -10,10 +11,11 @@
 %                2. quality control: clean dataset prior to growth rate calculations
 %                3. fun part! compute population growth rates between YFP and CFP populations
 
+
 % BIIIIG thank yous to Cherry Gao for helping me get started!
 
-% last update: Jen, 2019 January 24
-% commit: successful visualization of growth in YFP but not in CFP with area
+% last update: Jen, 2019 January 25
+% commit: rename (previously glycogen_analysis_windows) and edit comments for sharing
 
 % ok let's go!
 
