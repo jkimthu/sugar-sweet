@@ -13,8 +13,8 @@
 %           - for specifics, see strategy at the start of each section
 
 
-% last update: Jen, 2019 Jan 25
-% commit: add section to calculate and plot dA/dt
+% last update: Jen, 2019 Feb 7
+% commit: first analysis for 2019-02-06 experiment
 
 % ok let's go!
 
@@ -47,13 +47,13 @@ clc
 % 0. initialize data
 %xy = 2;
 xy_start = 1;
-xy_end = 16;
-dt_min = 2;
+xy_end = 24;
+dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2018-11-23';
+date = '2019-02-06';
 
-cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
+%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
 
