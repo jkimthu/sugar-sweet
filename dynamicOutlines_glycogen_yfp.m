@@ -16,8 +16,8 @@
 %     7. woohoo!
 
 
-% last edit: jen, 2019 January 23
-% commit: yfp tracking of allXYs dataset, xy02, with YFP and CFP colored
+% last edit: jen, 2019 Feb 10
+% commit: yfp tracking of 2019-02-06 dataset, xy1, with YFP and CFP colored
 
 % OK LEZ GO!
 
@@ -27,7 +27,7 @@ clc
 clear
 
 % 0. initialize data
-date = '2018-11-23';
+date = '2019-02-06';
 %cd(strcat('D:\',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -39,7 +39,7 @@ threshold = 103.4; % determined to not ID both fluorophores in a single cell
 
 %%
 % 0. initiate loop through movies of interest
-for xy = 2
+for xy = 1
     
     if xy >= 10
         xy_nomen = strcat('xy',num2str(xy));
@@ -49,7 +49,7 @@ for xy = 2
     
     
     % 1. compile experiment data matrix
-    dt_min = 2;
+    dt_min = 3;
     xy_start = xy;
     xy_end = xy;
     xyData = buildDM_glycogen(D5, xy_start, xy_end,dt_min);
@@ -88,7 +88,7 @@ for xy = 2
         filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-yfp-frame',num2str(img),'.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[100 140]); % 2018-11-23
+        imshow(I, 'DisplayRange',[100 130]); % 2019-02-06
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
@@ -104,6 +104,8 @@ for xy = 2
             
             isCFP = dm_currentImage(:,13)> threshold;          % col 13 = CFP (above threshold? yes/no)
             isYFP = dm_currentImage(:,14)> threshold;          % col 14 = YFP (above threshold? yes/no)
+            
+            isBoth = isCFP + isYFP;
             
             majorAxes = dm_currentImage(:,2);       % col 2 = lengths
             minorAxes = dm_currentImage(:,4);       % col 4 = widths
@@ -125,7 +127,9 @@ for xy = 2
                 
                 
                 % color ellipse based on fluorescent signal
-                if isYFP(particle) == 1
+                if isBoth(particle) == 1
+                    color = rgb('Crimson');
+                elseif isYFP(particle) == 1
                     color = rgb('GoldenRod');
                 elseif isCFP(particle) == 1
                     color = rgb('Cyan');
