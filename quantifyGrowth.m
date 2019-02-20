@@ -13,8 +13,8 @@
 %           - for specifics, see strategy at the start of each section
 
 
-% last update: Jen, 2019 Feb 7
-% commit: analysis for 2019-02-06 experiment
+% last update: Jen, 2019 Feb 20
+% commit: analysis for 2019-02-19 experiment
 
 % ok let's go!
 
@@ -51,7 +51,7 @@ xy_end = 24;
 dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2019-02-06';
+date = '2019-02-19';
 
 %cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
@@ -274,8 +274,8 @@ xy_end = 24;
 dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2019-02-06';
-cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
+date = '2019-02-19';
+%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
 
