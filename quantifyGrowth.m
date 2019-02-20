@@ -14,7 +14,7 @@
 
 
 % last update: Jen, 2019 Feb 7
-% commit: first analysis for 2019-02-06 experiment
+% commit: analysis for 2019-02-06 experiment
 
 % ok let's go!
 
@@ -131,22 +131,47 @@ isYFP = yfp > threshold;
 
 
 
-% 9. test threshold, throw error if any data points ID as both
+% 9. test threshold, throw out any tracks that at any point ID as both
 isBoth = isCFP+isYFP;
+glycogenData_noDoublePos = glycogenData_noNaNs;
+growthRt_noDoublePos = growthRt_noNaNs;
+bins_noDoublePos = bins_noNaNs;
+
 if sum(isBoth == 2) > 0
-    error('threshold fail! some cells positive for both fluorophores')
+    
+    disp('removing cells positive for both fluorophores')
+    
+    % identify trackNum of double-positives (errors)
+    idx_errors = find(isBoth == 2);
+    trackNum = glycogenData_noNaNs(:,12);   % col 12 = trackNum
+    ids_errors = trackNum(idx_errors);
+    unique_errors = unique(ids_errors);
+    unique_errors_sorted = sort(unique_errors(:,1),'descend');
+    
+    
+    % trim based on trackNum, in reverse order to maintain indeces
+    for i = 1:length(unique_errors_sorted)
+        
+        currentTrack = unique_errors_sorted(i);
+        growthRt_noDoublePos(glycogenData_noDoublePos(:,12) == currentTrack) = [];
+        bins_noDoublePos(glycogenData_noDoublePos(:,12) == currentTrack) = [];
+        glycogenData_noDoublePos(glycogenData_noDoublePos(:,12) == currentTrack,:) = [];
+        
+    end
+        
 end
 
-% this step doesn't matter as long as threshold doesn't allow double-positives
-growthRt_final = growthRt_noNaNs(isBoth < 2);
-glycogenData_final = glycogenData_noNaNs(isBoth < 2,:);
-bins_final = bins_noNaNs(isBoth < 2);
-isYFP_final = isYFP(isBoth < 2);
-isCFP_final = isCFP(isBoth < 2);
+
+% 10. finalize data in prep for sorting by fluorophore
+growthRt_final = growthRt_noDoublePos;
+glycogenData_final = glycogenData_noDoublePos;
+bins_final = bins_noDoublePos;
+isCFP_final = glycogenData_final(:,13) > threshold;   % col 13 = mean CFP intensity
+isYFP_final = glycogenData_final(:,14) > threshold;   % col 14 = mean YFP intensity;
 
 
 
-% 10. separate growth rates by fluorophore
+% 11. separate growth rates by fluorophore
 
 % growthRt_yfp = growthRt_final(isYFP_final == 1);
 % growthRt_cfp = growthRt_final(isCFP_final == 1);
@@ -182,12 +207,12 @@ end
 clear currentID currentGR currentBins
 
 
-% 11. bin growth rate by time
+% 12. bin growth rate by time
 binned_yfp = accumarray(bins_yfp,growthRt_yfp,[],@(x) {x});
 binned_cfp = accumarray(bins_cfp,growthRt_cfp,[],@(x) {x});
 
 
-% 12. calculate mean, standard dev, counts, and standard error
+% 13. calculate mean, standard dev, counts, and standard error
 y_bin_means = cellfun(@mean,binned_yfp);
 y_bin_stds = cellfun(@std,binned_yfp);
 y_bin_counts = cellfun(@length,binned_yfp);
@@ -200,7 +225,7 @@ c_bin_sems = c_bin_stds./sqrt(c_bin_counts);
 
 
 
-% 13. plot growth rate over time
+% 14. plot growth rate over time
 palette = {'DodgerBlue','GoldenRod'};
 
 yfp_color = rgb(palette(2));
@@ -213,9 +238,9 @@ hold on
 errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_color)
 hold on
 grid on
-axis([0,8.5,-1,1])
+axis([0,8.5,-0.05,0.35])
 xlabel('Time (hr)')
-ylabel('Growth rate')
+ylabel('Growth rate (1/hr)')
 title(strcat(date,': (',specificGrowthRate,')'))
 legend('YFP WT', 'CFP mutant')
 
@@ -244,15 +269,12 @@ clear
 clc
 
 % 0. initialize data
-%xy = 2;
 xy_start = 1;
-xy_end = 16;
-dt_min = 2;
+xy_end = 24;
+dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2018-11-23';
-%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date,'_xy02'))
-%load(strcat('glycogen-',date,'-earlyEdits-jiggle-0p5.mat'),'D5');
+date = '2019-02-06';
 cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -299,7 +321,7 @@ clear timeInSeconds frame
 % 4. isolate YFP and CFP intensities and area
 cfp = glycogenData_bubbleTrimmed(:,13);         % col 13 = mean CFP intensity
 yfp = glycogenData_bubbleTrimmed(:,14);         % col 14 = mean YFP intensity
-area = glycogenData_bubbleTrimmed(:,6);         % col 6 = measured surface area
+%area = glycogenData_bubbleTrimmed(:,6);         % col 6 = measured surface area
 
 
 
@@ -308,22 +330,43 @@ isCFP = cfp > threshold;
 isYFP = yfp > threshold;
 
 
-
-% 6. test threshold, throw error if any data points ID as both
+% 6. test threshold, throw out any tracks that at any point ID as both
 isBoth = isCFP+isYFP;
+glycogenData_noDoublePos = glycogenData_bubbleTrimmed;
+bins_noDoublePos = bins;
+
 if sum(isBoth == 2) > 0
-    error('threshold fail! some cells positive for both fluorophores')
+    
+    disp('removing cells positive for both fluorophores')
+    
+    % identify trackNum of double-positives (errors)
+    idx_errors = find(isBoth == 2);
+    trackNum = glycogenData_bubbleTrimmed(:,12);   % col 12 = trackNum
+    ids_errors = trackNum(idx_errors);
+    unique_errors = unique(ids_errors);
+    unique_errors_sorted = sort(unique_errors(:,1),'descend');
+    
+    
+    % trim based on trackNum, in reverse order to maintain indeces
+    for i = 1:length(unique_errors_sorted)
+        
+        currentTrack = unique_errors_sorted(i);
+        glycogenData_noDoublePos(glycogenData_noDoublePos(:,12) == currentTrack,:) = [];
+        
+    end
+        
 end
 
-% this step doesn't matter as long as threshold doesn't allow double-positives
-glycogenData_final = glycogenData_bubbleTrimmed(isBoth < 2,:);
-bins_final = bins(isBoth < 2);
-isYFP_final = isYFP(isBoth < 2);
-isCFP_final = isCFP(isBoth < 2);
-area_final = area(isBoth < 2);
+
+% 7. finalize data in prep for sorting by fluorophore
+glycogenData_final = glycogenData_noDoublePos;
+bins_final = bins_noDoublePos;
+isCFP_final = glycogenData_final(:,13) > threshold;   % col 13 = mean CFP intensity
+isYFP_final = glycogenData_final(:,14) > threshold;   % col 14 = mean YFP intensity;
+area_final = glycogenData_final(:,6);                 % col 6 = measured surface area
 
 
-% 7. separate area by fluorophore
+% 8. separate area by fluorophore
 trackNum = glycogenData_final(:,12); % col 12 = track num
 IDs_yfp = unique(trackNum(isYFP_final == 1));
 IDs_cfp = unique(trackNum(isCFP_final == 1));
@@ -352,12 +395,12 @@ end
 clear currentID currentSA currentTime
 
 
-% 8. bin area by time
+% 9. bin area by time
 binned_yfp = accumarray(time_yfp,area_yfp,[],@(x) {x});
 binned_cfp = accumarray(time_cfp,area_cfp,[],@(x) {x});
 
 
-% 9. calculate mean, standard dev, counts, and standard error
+% 10. calculate mean, standard dev, counts, and standard error
 y_bin_means = cellfun(@mean,binned_yfp);
 y_bin_sums = cellfun(@sum,binned_yfp);
 y_bin_stds = cellfun(@std,binned_yfp);
@@ -371,17 +414,17 @@ c_bin_counts = cellfun(@length,binned_cfp);
 c_bin_sems = c_bin_stds./sqrt(c_bin_counts);
 
 
-% 10. normalize sums by counts
+% 11. normalize sums by counts
 y_norm = y_bin_sums./y_bin_counts;
 c_norm = c_bin_sums./c_bin_counts;
 
 
-% 11. normalize by initial sum
+% 12. normalize by initial sum
 y_norm2 = y_norm/y_norm(1);
 c_norm2 = c_norm/c_norm(1);
 
 
-% 12. plot growth rate over time
+% 13. plot growth rate over time
 palette = {'DodgerBlue','GoldenRod'};
 
 yfp_color = rgb(palette(2));
