@@ -17,7 +17,8 @@
 
 
 % last edit: jen, 2019 Feb 10
-% commit: yfp tracking of 2019-02-06 dataset, xy1, with YFP and CFP colored
+% commit: yfp tracking of 2019-02-06 dataset, xy1, with correction in
+%         isBoth (==2 instead of ==1 is red)
 
 % OK LEZ GO!
 
@@ -127,7 +128,7 @@ for xy = 1
                 
                 
                 % color ellipse based on fluorescent signal
-                if isBoth(particle) == 1
+                if isBoth(particle) == 2
                     color = rgb('Crimson');
                 elseif isYFP(particle) == 1
                     color = rgb('GoldenRod');
