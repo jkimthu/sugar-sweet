@@ -13,8 +13,8 @@
 %           - for specifics, see strategy at the start of each section
 
 
-% last update: Jen, 2019 Feb 20
-% commit: analysis for 2019-02-19 experiment
+% last update: Jen, 2019 Feb 22
+% commit: analysis for 2019-02-19 experiment, steady control
 
 % ok let's go!
 
@@ -46,8 +46,8 @@ clc
 
 % 0. initialize data
 %xy = 2;
-xy_start = 1;
-xy_end = 24;
+xy_start = 25;
+xy_end = 29;
 dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
