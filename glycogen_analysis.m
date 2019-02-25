@@ -15,8 +15,8 @@
 % Acknowledgements: Cherry Gao, Vicente Fernandez and Jeff Guasto!
 
 
-% last update: Jen, 2019 Feb 20
-% commit: first analysis of 2019-02-19 experiment
+% last update: Jen, 2019 Feb 25
+% commit: first analysis of 2019-02-22 experiment
 
 
 % ok let's go!
@@ -32,7 +32,7 @@ ConversionFactor = 6.5/60; % units = um/pixel
 
 
 % initialize experiment folder
-experiment = '2019-02-19';
+experiment = '2019-02-22';
 
 
 % open folder for experiment of interest
@@ -299,7 +299,7 @@ save(strcat('glycogen-',experiment,'-allXYs.mat'),'D')
 % particle tracking data
 clear
 clc
-experiment = '2019-02-19';
+experiment = '2019-02-22';
 
 % 0. open folder for experiment of interest
 %newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full')
