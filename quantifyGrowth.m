@@ -13,8 +13,8 @@
 %           - for specifics, see strategy at the start of each section
 
 
-% last update: Jen, 2019 Feb 22
-% commit: analysis for 2019-02-19 experiment, steady control
+% last update: Jen, 2019 Feb 25
+% commit: analysis for 2019-02-22 experiment, pulsing
 
 % ok let's go!
 
@@ -45,13 +45,12 @@ clear
 clc
 
 % 0. initialize data
-%xy = 2;
-xy_start = 25;
-xy_end = 29;
+xy_start = 1;
+xy_end = 24;
 dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2019-02-19';
+date = '2019-02-22';
 
 %cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
@@ -238,12 +237,13 @@ hold on
 errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_color)
 hold on
 grid on
-axis([0,8.5,-0.05,0.35])
+%axis([0,8.5,-0.05,0.35])
+axis([0,8.5,-0.05,0.55])
 xlabel('Time (hr)')
 ylabel('Growth rate (1/hr)')
 title(strcat(date,': (',specificGrowthRate,')'))
-legend('YFP WT', 'CFP mutant')
-
+%legend('YFP WT', 'CFP mutant')
+legend('YFP mutant', 'CFP wt')
 
 %% section 2. Total Area Occupied, normalized per cell and initial value
 
@@ -274,7 +274,7 @@ xy_end = 24;
 dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2019-02-19';
+date = '2019-02-22';
 %cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -441,8 +441,8 @@ axis([0,8.5,.9,1.2])
 xlabel('Time (hr)')
 ylabel('Area per cell / initial')
 title(strcat(date,': growth in total area'))
-legend('YFP WT', 'CFP mutant')
-
+%legend('YFP WT', 'CFP mutant')
+legend('YFP mutant', 'CFP wt')
 
 %% section 3. dA/dt, where A is normalized by the number of cells
 
