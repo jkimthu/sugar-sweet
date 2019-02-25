@@ -16,8 +16,8 @@
 %     7. woohoo!
 
 
-% last edit: jen, 2019 Feb 10
-% commit: phase tracking of 2019-02-06 dataset, xy1, with YFP and CFP colored
+% last edit: jen, 2019 Feb 25
+% commit: phase tracking of 2019-02-22 dataset, xy1, with YFP and CFP colored
 
 % OK LEZ GO!
 
@@ -28,7 +28,7 @@ clear
 
 
 % 0. initialize data
-date = '2019-02-06';
+date = '2019-02-22';
 %cd(strcat('D:\',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -89,7 +89,7 @@ for xy = 1
         filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-phase-frame',num2str(img),'.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[100 250]); % 2019-02-06
+        imshow(I, 'DisplayRange',[150 650]); % 2019-02-22
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
@@ -127,7 +127,7 @@ for xy = 1
                 lineVal = 0.5;
                 
                 % color ellipse based on fluorescent signal
-                if isBoth(particle) == 1
+                if isBoth(particle) == 2
                     color = rgb('Crimson');
                 elseif isYFP(particle) == 1
                     color = rgb('GoldenRod');
