@@ -1,0 +1,35 @@
+for (p=5; p<16; p++) {
+   
+   if (p < 10) {
+   	xy = "xy0"+p;
+   } else {
+   	xy = "xy"+p;
+   }
+
+
+   for (i=1; i<242; i++) {
+
+	lead = "D:/2018-11-23/glycogen-combo1-2018-11-23";
+
+	if (i < 10) 
+		tpt = "t00" + i;
+	else if (i < 100) 
+		tpt = "t0" + i;
+	else
+		tpt = "t"+i;
+
+	open(lead+tpt+xy+"c1.tif");
+	rename("current-c1");
+	open(lead+tpt+xy+"c2.tif");
+	rename("current-c2");
+	open(lead+tpt+xy+"c3.tif");
+	rename("current-c3");
+
+	run("Merge Channels...", "c4=current-c1 c5=current-c2 c7=current-c3 create");
+	saveAs("Jpeg", "D:/composite-" + xy + "/Composite-" + xy + "-" + tpt + ".jpg");
+	selectWindow("Composite");
+	close();
+
+   }
+
+}
