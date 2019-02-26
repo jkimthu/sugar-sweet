@@ -17,7 +17,7 @@
 
 
 % last edit: jen, 2019 Feb 25
-% commit: phase tracking of 2019-02-22 dataset, xy1, with YFP and CFP colored
+% commit: phase tracking of 2019-02-22 dataset, xy24-29, with YFP and CFP colored
 
 % OK LEZ GO!
 
@@ -40,7 +40,7 @@ threshold = 103.4; % determined to not ID both fluorophores in a single cell
 
 %%
 % 0. initiate loop through movies of interest
-for xy = 1
+for xy = 24:29
     
     if xy >= 10
         xy_nomen = strcat('xy',num2str(xy));
