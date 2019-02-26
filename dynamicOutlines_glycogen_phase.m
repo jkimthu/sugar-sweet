@@ -17,7 +17,7 @@
 
 
 % last edit: jen, 2019 Feb 25
-% commit: phase tracking of 2019-02-22 dataset, xy24-29, with YFP and CFP colored
+% commit: phase tracking of 2019-02-19 dataset, xy24-29, with YFP and CFP colored
 
 % OK LEZ GO!
 
@@ -28,7 +28,7 @@ clear
 
 
 % 0. initialize data
-date = '2019-02-22';
+date = '2019-02-19';
 %cd(strcat('D:\',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -89,7 +89,7 @@ for xy = 24:29
         filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-phase-frame',num2str(img),'.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[150 650]); % 2019-02-22
+        imshow(I, 'DisplayRange',[100 140]); % 2019-02-19
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
