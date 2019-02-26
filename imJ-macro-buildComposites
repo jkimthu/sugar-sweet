@@ -1,4 +1,4 @@
-for (p=5; p<16; p++) {
+for (p=1; p<9; p++) {
    
    if (p < 10) {
    	xy = "xy0"+p;
@@ -7,9 +7,9 @@ for (p=5; p<16; p++) {
    }
 
 
-   for (i=1; i<242; i++) {
+   for (i=1; i<161; i++) {
 
-	lead = "D:/2018-11-23/glycogen-combo1-2018-11-23";
+	lead = "D:/2019-02-19_tiffs/glycogen-2019-02-19";
 
 	if (i < 10) 
 		tpt = "t00" + i;

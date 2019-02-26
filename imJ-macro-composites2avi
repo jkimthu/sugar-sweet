@@ -1,4 +1,4 @@
-for (p=3; p<16; p++) {
+for (p=1; p<9; p++) {
    
 	if (p < 10) {
    		xy = "xy0"+p;
@@ -7,7 +7,7 @@ for (p=3; p<16; p++) {
  	}
 
 	run("Image Sequence...", "open=D:/composite-" + xy + "/Composite-" + xy + "-t001.jpg sort");
-	run("AVI... ", "compression=JPEG frame=5 save=D:/composite-" + xy + "/composite-2018-11-23-" + xy + ".avi");
+	run("AVI... ", "compression=JPEG frame=5 save=D:/composite-" + xy + "/composite-2019-02-19-" + xy + ".avi");
 	close();
 
 }
