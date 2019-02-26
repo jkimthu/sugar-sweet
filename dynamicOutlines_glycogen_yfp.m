@@ -16,9 +16,8 @@
 %     7. woohoo!
 
 
-% last edit: jen, 2019 Feb 10
-% commit: yfp tracking of 2019-02-06 dataset, xy1, with correction in
-%         isBoth (==2 instead of ==1 is red)
+% last edit: jen, 2019 Feb 26
+% commit: yfp tracking of 2019-02-19 dataset, xy24 (fluc) and xy25 (steady)
 
 % OK LEZ GO!
 
@@ -28,7 +27,7 @@ clc
 clear
 
 % 0. initialize data
-date = '2019-02-06';
+date = '2019-02-19';
 %cd(strcat('D:\',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -89,7 +88,7 @@ for xy = 1
         filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-yfp-frame',num2str(img),'.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[100 130]); % 2019-02-06
+        imshow(I, 'DisplayRange',[100 110]); % 2019-02-19
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
