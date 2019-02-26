@@ -14,7 +14,7 @@
 
 
 % last update: Jen, 2019 Feb 26
-% commit: analysis for 2019-02-25 experiment, pulsing
+% commit: analysis for 2019-02-25 experiment, steady
 
 % ok let's go!
 
@@ -45,8 +45,8 @@ clear
 clc
 
 % 0. initialize data
-xy_start = 1;
-xy_end = 24;
+xy_start = 25;
+xy_end = 30;
 dt_min = 3;
 %dt_min = 30; % reduced frequency dataset
 
