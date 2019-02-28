@@ -12,7 +12,7 @@
 
 
 % last update: Jen, 2019 Feb 28
-% commit: analysis for 2019-02-25 experiment, pulsing, alter axes
+% commit: analysis for 2018-11-23 experiment, pulsing, alter axes
 
 % ok let's go!
 
@@ -44,11 +44,11 @@ clc
 
 % 0. initialize data
 xy_start = 1;
-xy_end = 24;
-dt_min = 3;
+xy_end = 16;
+dt_min = 2;
 %dt_min = 30; % reduced frequency dataset
 
-date = '2019-02-25';
+date = '2018-11-23';
 
 %cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
