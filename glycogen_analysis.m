@@ -15,8 +15,8 @@
 % Acknowledgements: Cherry Gao, Vicente Fernandez and Jeff Guasto!
 
 
-% last update: Jen, 2019 Feb 26
-% commit: first analysis of 2019-02-25 experiment
+% last update: Jen, 2019 Mar 9
+% commit: first analysis of 2019-03-08 experiment
 
 
 % ok let's go!
@@ -32,13 +32,7 @@ ConversionFactor = 6.5/60; % units = um/pixel
 
 
 % initialize experiment folder
-experiment = '2019-02-25';
-
-
-% open folder for experiment of interest
-%imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full'); % _xy02 for folder
-%imageFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02'); % _xy02 for folder
-%cd(imageFolder); % move to the folder containing images 
+experiment = '2019-03-08';
 
 
 % initialize image names
@@ -46,11 +40,11 @@ imageName = strcat('glycogen-',experiment);
 
 
 % initialize total number of movies
-xy_final = 30; % total num of xy positions in analysis
+xy_final = 20; % total num of xy positions in analysis
 
 
 % initialize array of desired timepoints
-selected_tpt = linspace(1,161,161);
+selected_tpt = linspace(1,113,113);
 
 
 %% 1. particle identification, characterization and tracking
@@ -299,7 +293,7 @@ save(strcat('glycogen-',experiment,'-allXYs.mat'),'D')
 % particle tracking data
 clear
 clc
-experiment = '2019-02-25';
+experiment = '2019-03-08';
 
 % 0. open folder for experiment of interest
 %newFolder = strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',experiment,'_xy02_full')
