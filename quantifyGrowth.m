@@ -12,7 +12,7 @@
 
 
 % last update: Jen, 2019 Mar 10
-% commit: first analysis for 2019-03-09 experiment, pulsing
+% commit: first analysis for 2019-03-09 experiment, steady
 
 % ok let's go!
 
@@ -43,8 +43,8 @@ clear
 clc
 
 % 0. initialize data
-xy_start = 1;
-xy_end = 10;
+xy_start = 11;
+xy_end = 20;
 dt_min = 3;
 
 date = '2019-03-08';
@@ -237,7 +237,7 @@ errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_
 hold on
 grid on
 %axis([0,8.5,-0.05,0.35])
-axis([0,5.5,-0.05,0.55])
+axis([0,5.5,-0.05,2.55])
 xlabel('Time (hr)')
 ylabel('Growth rate (1/hr)')
 title(strcat(date,': (',specificGrowthRate,')'))
