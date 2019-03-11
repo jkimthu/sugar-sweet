@@ -16,8 +16,8 @@
 %     7. woohoo!
 
 
-% last edit: jen, 2019 Feb 25
-% commit: phase tracking of 2019-02-19 dataset, xy24-29, with YFP and CFP colored
+% last edit: jen, 2019 Mar 10
+% commit: phase tracking of 2019-03-08 dataset, xy09-12, with YFP and CFP colored
 
 % OK LEZ GO!
 
@@ -28,7 +28,7 @@ clear
 
 
 % 0. initialize data
-date = '2019-02-19';
+date = '2019-03-08';
 %cd(strcat('D:\',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -40,7 +40,7 @@ threshold = 103.4; % determined to not ID both fluorophores in a single cell
 
 %%
 % 0. initiate loop through movies of interest
-for xy = 24:29
+for xy = 9:12
     
     if xy >= 10
         xy_nomen = strcat('xy',num2str(xy));
@@ -89,7 +89,7 @@ for xy = 24:29
         filename = strcat('dynamicOutlines-glycogen-xy',num2str(xy),'-phase-frame',num2str(img),'.tif');
         
         figure(1)
-        imshow(I, 'DisplayRange',[100 140]); % 2019-02-19
+        imshow(I, 'DisplayRange',[100 150]); % 2019-03-08
         % imtool(I), displays image in grayscale with range
         % lowering right # increases num sat'd pxls
         
