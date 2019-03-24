@@ -11,8 +11,8 @@
 
 
 
-% last update: Jen, 2019 Feb 28
-% commit: analysis for 2018-11-23 experiment, pulsing, alter axes
+% last update: Jen, 2019 Mar 10
+% commit: first analysis for 2019-03-09 experiment, steady
 
 % ok let's go!
 
@@ -44,11 +44,13 @@ clear
 clc
 
 % 0. initialize data
-xy_start = 1;
-xy_end = 24;
+
+xy_start = 11;
+xy_end = 20;
 dt_min = 3;
 
-date = '2019-02-25';
+date = '2019-03-08';
+
 
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
@@ -84,7 +86,9 @@ clear isDrop volumes trackNum dt_min
 
 
 % 4. truncate data to non-erroneous timestamps (e.g. bubbles) 
-maxTime = 4;%8; % in hours
+
+maxTime = 5; % in hours
+
 frame = glycogen_data(:,9);      % col 9 = frame in image sequence
 timeInSeconds = frame * dt_sec;  % frame = is consequetive images in analysis
 timeInHours = timeInSeconds/3600;
@@ -236,13 +240,13 @@ hold on
 errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_color)
 hold on
 grid on
-%axis([0,8.5,-0.05,0.35])
-%axis([0,8.5,-0.05,0.55])
+
 axis([0,8.5,-0.05,2])
+
 xlabel('Time (hr)')
 ylabel('Growth rate (1/hr)')
 title(strcat(date,': (',specificGrowthRate,')'))
-legend('YFP WT', 'CFP mutant')
-%legend('YFP mutant', 'CFP wt')
+%legend('YFP WT', 'CFP mutant')
+legend('YFP mutant', 'CFP wt')
 
 
