@@ -25,17 +25,18 @@
 %                2. isolate volume (Va), drop, and track number for growth rate calculations
 %                3. calculate growth rate
 %                4. truncate data to non-erroneous timestamps (e.g. bubbles) 
-%                5. bin growth rate into time bins based on timestamp
+%                5. bin time based on timestamp
 %                6. isolate selected specific growth rate and remove nans from data analysis
 %                7. isolate YFP and CFP intensities
 %                8. convert intensities to (+) or (-) fluorophore
 %                       - for details on threshold determination,
 %                         see scrap_pile section "YFP and CFP thresholds"
 %                9. test threshold, throw error if any data points ID as both
-%               10. separate growth rates by fluorophore
-%               11. bin growth rate by time
-%               12. calculate stats for each bin, including mean growth rate
-%               13. plot growth rate over time
+%               10. prep data for fluorophore sorting 
+%               11. separate growth rates by fluorophore
+%               12. bin growth rate by time
+%               13. calculate stats for each bin, including mean growth rate
+%               14. plot growth rate over time
 
 
 
@@ -44,13 +45,11 @@ clc
 
 % 0. initialize data
 xy_start = 1;
-xy_end = 16;
-dt_min = 2;
-%dt_min = 30; % reduced frequency dataset
+xy_end = 24;
+dt_min = 3;
 
-date = '2018-11-23';
+date = '2019-02-25';
 
-%cd(strcat('/Users/jen/Documents/StockerLab/Data/glycogen/',date))
 load(strcat('glycogen-',date,'-allXYs-jiggle-0p5.mat'),'D5');
 
 
@@ -73,8 +72,8 @@ clear xy_start xy_end
 
 
 % 2. isolate volume (Va), drop, and track number for growth rate calculations
-volumes = glycogen_data(:,5);        % col 4 = calculated va_vals (cubic um)
-isDrop = glycogen_data(:,3);         % col 2 = isDrop, 1 marks a birth event
+volumes = glycogen_data(:,5);        % col 5 = calculated va_vals (cubic um)
+isDrop = glycogen_data(:,3);         % col 3 = isDrop, 1 marks a birth event
 trackNum = glycogen_data(:,12);      % col 12 = track number (not ID from particle tracking)
 
 
@@ -85,7 +84,7 @@ clear isDrop volumes trackNum dt_min
 
 
 % 4. truncate data to non-erroneous timestamps (e.g. bubbles) 
-maxTime = 8; % in hours
+maxTime = 4;%8; % in hours
 frame = glycogen_data(:,9);      % col 9 = frame in image sequence
 timeInSeconds = frame * dt_sec;  % frame = is consequetive images in analysis
 timeInHours = timeInSeconds/3600;
@@ -100,7 +99,7 @@ end
 clear maxTime frame timeInSeconds timeInHours
 
 
-% 5. bin growth rate into time bins based on timestamp
+% 5. bin time based on timestamp
 frame = glycogenData_bubbleTrimmed(:,9);      % col 9 = frame in image sequence
 timeInSeconds = frame * dt_sec;    
 timeInHours = timeInSeconds/3600;
@@ -159,7 +158,7 @@ if sum(isBoth == 2) > 0
 end
 
 
-% 10. finalize data in prep for sorting by fluorophore
+% 10. prep data for fluorophore sorting 
 growthRt_final = growthRt_noDoublePos;
 glycogenData_final = glycogenData_noDoublePos;
 bins_final = bins_noDoublePos;
@@ -237,8 +236,9 @@ hold on
 errorbar((1:length(c_bin_means))/binsPerHour,c_bin_means,c_bin_sems,'Color',cfp_color)
 hold on
 grid on
-axis([0,8.5,-0.05,0.35])
+%axis([0,8.5,-0.05,0.35])
 %axis([0,8.5,-0.05,0.55])
+axis([0,8.5,-0.05,2])
 xlabel('Time (hr)')
 ylabel('Growth rate (1/hr)')
 title(strcat(date,': (',specificGrowthRate,')'))
